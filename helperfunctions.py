@@ -209,9 +209,6 @@ def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None],
     
 
 
-
-# Define a function you will pass an image 
-# and the list of windows to be searched (output of slide_windows())
 def search_windows(img, windows, clf, scaler, color_space='BGR', 
                     spatial_size=(32, 32), hist_bins=32, 
                     hist_range=(0, 256), orient=9, 
