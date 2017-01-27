@@ -25,6 +25,7 @@ import glob
 import os
 
 
+
 # Define global variables
 # frame/image objects
 num_frames_to_keep = 6  # number of frames to store
@@ -220,7 +221,8 @@ def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False):
     if verbose:
         print(labels[1], ' cars found')
         plt.imshow(labels[0], cmap='gray')
-    
+
+
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
     window_img = draw_labeled_bboxes(draw_image, labels, color=(0, 0, 255), thick=6)  
@@ -276,6 +278,7 @@ def process_test_images(verbose=False):
             # Save image to file
             file_name_to = 'processed_'+os.path.basename(file_name_from)
             cv2.imwrite(test_img_path+file_name_to, img_rev) 
+
 
 
 
