@@ -28,22 +28,22 @@ import os
 # Define global variables
 # frame/image objects
 num_frames_to_keep = 6  # number of frames to store
-recent_frames = []      # list of frame images that are stored
+recent_hot_windows = [] # list of hot windows identified on recent frames
 # classifier and training related objects
 svc = None              # linear SVC object
 X_scaler = None         # scaler object for normalizing inputs
 # hyper parameters for feature extraction
 color_space = 'BGR'     # color space of the images
-orient = 9              # HOG orientations
+orient = 6              # HOG orientations
 pix_per_cell = 8        # HOG pixels per cell
 cell_per_block = 2      # HOG cells per block
-hog_channel = 0         # Can be 0, 1, 2, or 'ALL'
+hog_channel = 'ALL'         # Can be 0, 1, 2, or 'ALL'
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32          # Number of histogram bins
 spatial_feat = True     # Spatial features on or off
 hist_feat = True        # Histogram features on or off
-hog_feat = False         # HOG features on or off   
-# Search window coordinates and window sizes
+hog_feat = True         # HOG features on or off   
+# Search area coordinates and window sizes for far, mid-range and near cars
 far_search_window = (np.array([[0.1,0.9], [0.5, 1.0]]), 64)
 mid_search_window = (np.array([[0.05,0.95], [0.55, 1.0]]), 80)
 near_search_window = (np.array([[0.0,1.0], [0.6, 1.0]]), 128)
@@ -166,49 +166,46 @@ def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=6):
 
 
 
-def mark_vehicles_on_frame(frame_img, threshold=2, verbose=False):
+def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
     '''
     
     # Define global variables
-    global recent_frames
+    global recent_hot_windows
     global num_frames_to_keep
     global y_start_stop
     global far_search_window
     global mid_search_window
     global near_search_window
     
-    # Add frame_img to the list of recent_frames and remove the oldest one if length is exceeding the limit
-    recent_frames.append(frame_img)
-    if len(recent_frames) > num_frames_to_keep:
-        recent_frames.pop(0)
-    
-    # Identify windows that are classified as cars for all images in the recent_frames
+    # Identify windows that are classified as cars for all images in the recent_hot_windows
     hot_windows = []
-    # Iterate through images in recent_frames
-    for img in recent_frames:
-        # Iterate through search windows that are defined globally
-        for search_window in [far_search_window, mid_search_window, near_search_window]:
-            # Identiry window coordinates using slide_window
-            x_start_stop = ((search_window[0][0]*img.shape[1]).round()).astype(int)
-            y_start_stop = ((search_window[0][1]*img.shape[0]).round()).astype(int)
-            xy_window = (search_window[1], search_window[1])
-            far_windows = slide_window(img, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
-                                xy_window=xy_window, xy_overlap=(0.5, 0.5))
-            # Identify windows that are classified as cars                    
-            hot_windows += search_windows(img, far_windows, svc, X_scaler, color_space=color_space, 
-                                    spatial_size=spatial_size, hist_bins=hist_bins, 
-                                    orient=orient, pix_per_cell=pix_per_cell, 
-                                    cell_per_block=cell_per_block, 
-                                    hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                                    hist_feat=hist_feat, hog_feat=hog_feat)
-    
+    # Iterate through search windows that are defined globally
+    for search_window in [far_search_window, mid_search_window, near_search_window]:
+        # Identiry window coordinates using slide_window
+        x_start_stop = ((search_window[0][0]*frame_img.shape[1]).round()).astype(int)
+        y_start_stop = ((search_window[0][1]*frame_img.shape[0]).round()).astype(int)
+        xy_window = (search_window[1], search_window[1])
+        slide_windows = slide_window(frame_img, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
+                            xy_window=xy_window, xy_overlap=(0.5, 0.5))
+        # Identify windows that are classified as cars                    
+        hot_windows += search_windows(frame_img, slide_windows, svc, X_scaler, color_space=color_space, 
+                                spatial_size=spatial_size, hist_bins=hist_bins, 
+                                orient=orient, pix_per_cell=pix_per_cell, 
+                                cell_per_block=cell_per_block, 
+                                hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                                hist_feat=hist_feat, hog_feat=hog_feat)
+    # Append the results to the global list
+    recent_hot_windows.append(hot_windows)
+    if len(recent_hot_windows) > num_frames_to_keep:
+        recent_hot_windows.pop(0)
     # Create heatmap from the hot_windows
     heatmap = np.zeros_like(frame_img)
-    for window in hot_windows:
-        heatmap[window[0][1]:window[1][1], window[0][0]:window[1][0]] += 1
+    for frame_hot_windows in recent_hot_windows:
+        for window in frame_hot_windows:
+            heatmap[window[0][1]:window[1][1], window[0][0]:window[1][0]] += 1
     # if verbose, plot the heatmap    
     if verbose:
         plt.imshow(heatmap)
@@ -252,11 +249,11 @@ def process_movie(file_name):
 
 
 
-def process_test_images():
+def process_test_images(verbose=False):
     '''
     Read test images, process them, mark the vehicles on them and save them back to the folder
     '''
-    global recent_frames
+    global recent_hot_windows
     # Read test images and show search rectanbles on them
     file_formats = ['*.jpg', '*.png']
     # Iterate through files
@@ -265,9 +262,16 @@ def process_test_images():
         for file_name_from in file_names:
             # Load image
             img = cv2.imread(file_name_from) 
+            # Recorde time if verbose = True
+            if verbose:
+                t_start = time.time()
             # process image
-            recent_frames = []
+            recent_hot_windows = []
             img_rev = mark_vehicles_on_frame(img, threshold=2, verbose=False)
+            # Recorde time and print details if verbose = True
+            if verbose:
+                t_finish = time.time()
+                print('Total time for ', os.path.basename(file_name_from), ': ', round(t_finish-t_start, 2), 'Seconds')
             # save image
             # Save image to file
             file_name_to = 'processed_'+os.path.basename(file_name_from)
