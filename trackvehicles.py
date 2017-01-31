@@ -10,12 +10,19 @@ from helperfunctions import extract_features
 from helperfunctions import slide_window
 from helperfunctions import search_windows
 from helperfunctions import draw_boxes
+from helperfunctions import visualize_search_windows_on_test_images
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 import time
+from scipy.ndimage.measurements import label
+import matplotlib.pyplot as plt
+import cv2
+from moviepy.editor import VideoFileClip
+import glob
+import os
 
 
 # Define global variables
@@ -27,17 +34,20 @@ svc = None              # linear SVC object
 X_scaler = None         # scaler object for normalizing inputs
 # hyper parameters for feature extraction
 color_space = 'BGR'     # color space of the images
-orient = 12             # HOG orientations
+orient = 9              # HOG orientations
 pix_per_cell = 8        # HOG pixels per cell
 cell_per_block = 2      # HOG cells per block
-hog_channel = 'ALL'     # Can be 0, 1, 2, or 'ALL'
-spatial_size = (8, 8)   # Spatial binning dimensions
+hog_channel = 0         # Can be 0, 1, 2, or 'ALL'
+spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32          # Number of histogram bins
 spatial_feat = True     # Spatial features on or off
 hist_feat = True        # Histogram features on or off
-hog_feat = True         # HOG features on or off   
-# search window properties
-y_start_stop = [450, 720] # Min and max in y to search in slide_window()
+hog_feat = False         # HOG features on or off   
+# Search window coordinates and window sizes
+far_search_window = (np.array([[0.1,0.9], [0.5, 1.0]]), 64)
+mid_search_window = (np.array([[0.05,0.95], [0.55, 1.0]]), 80)
+near_search_window = (np.array([[0.0,1.0], [0.6, 1.0]]), 128)
+
 
 
 def train_classifier(verbose=False):
@@ -134,34 +144,136 @@ def train_classifier(verbose=False):
     
 
 
-def mark_vehicles_in_frame(frame_img, threshold=2):
+def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=6):
+    '''
+    Draw bounding boxes around the cars identified in labels heatmap
+    img: original image
+    labels: result of the label fundction
+    '''
+    # Iterate through all detected cars
+    for car_number in range(1, labels[1]+1):
+        # Find pixels with each car_number label value
+        nonzero = (labels[0] == car_number).nonzero()
+        # Identify x and y values of those pixels
+        nonzeroy = np.array(nonzero[0])
+        nonzerox = np.array(nonzero[1])
+        # Define a bounding box based on min/max x and y
+        bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+        # Draw the box on the image
+        cv2.rectangle(img, bbox[0], bbox[1], color, thick)
+    # Return the image
+    return img
+
+
+
+def mark_vehicles_on_frame(frame_img, threshold=2, verbose=False):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
     '''
+    
     # Define global variables
     global recent_frames
     global num_frames_to_keep
     global y_start_stop
+    global far_search_window
+    global mid_search_window
+    global near_search_window
+    
     # Add frame_img to the list of recent_frames and remove the oldest one if length is exceeding the limit
     recent_frames.append(frame_img)
     if len(recent_frames) > num_frames_to_keep:
         recent_frames.pop(0)
     
-    windows = slide_window(frame_img, x_start_stop=[None, None], y_start_stop=y_start_stop, 
-                        xy_window=(96, 96), xy_overlap=(0.5, 0.5))
+    # Identify windows that are classified as cars for all images in the recent_frames
+    hot_windows = []
+    # Iterate through images in recent_frames
+    for img in recent_frames:
+        # Iterate through search windows that are defined globally
+        for search_window in [far_search_window, mid_search_window, near_search_window]:
+            # Identiry window coordinates using slide_window
+            x_start_stop = ((search_window[0][0]*img.shape[1]).round()).astype(int)
+            y_start_stop = ((search_window[0][1]*img.shape[0]).round()).astype(int)
+            xy_window = (search_window[1], search_window[1])
+            far_windows = slide_window(img, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
+                                xy_window=xy_window, xy_overlap=(0.5, 0.5))
+            # Identify windows that are classified as cars                    
+            hot_windows += search_windows(img, far_windows, svc, X_scaler, color_space=color_space, 
+                                    spatial_size=spatial_size, hist_bins=hist_bins, 
+                                    orient=orient, pix_per_cell=pix_per_cell, 
+                                    cell_per_block=cell_per_block, 
+                                    hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                                    hist_feat=hist_feat, hog_feat=hog_feat)
     
-    hot_windows = search_windows(frame_img, windows, svc, X_scaler, color_space=color_space, 
-                            spatial_size=spatial_size, hist_bins=hist_bins, 
-                            orient=orient, pix_per_cell=pix_per_cell, 
-                            cell_per_block=cell_per_block, 
-                            hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                            hist_feat=hist_feat, hog_feat=hog_feat)                       
+    # Create heatmap from the hot_windows
+    heatmap = np.zeros_like(frame_img)
+    for window in hot_windows:
+        heatmap[window[0][1]:window[1][1], window[0][0]:window[1][0]] += 1
+    # if verbose, plot the heatmap    
+    if verbose:
+        plt.imshow(heatmap)
     
+    # Zero out pixels below the threshold
+    heatmap[heatmap <= threshold] = 0
+    
+    # Find bounding boxes around cars
+    labels = None
+    labels = label(heatmap)
+    # if verbose, print some details    
+    if verbose:
+        print(labels[1], ' cars found')
+        plt.imshow(labels[0], cmap='gray')
+    
+    # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
-    window_img = draw_boxes(draw_image, hot_windows, color=(0, 0, 255), thick=6)  
+    window_img = draw_labeled_bboxes(draw_image, labels, color=(0, 0, 255), thick=6)  
     
     return window_img
+
+
+# path to the working repository
+work_path = 'C:/Users/ali.khalili/Desktop/Car-ND/CarND-P5-Vehicle-Detection-and-Tracking/'
+# path to the final non-vehicle dataset of 64 x 64 images
+non_vehicle_path = work_path + 'non-vehicles-dataset-final/'
+# path to the final vehicle dataset of 64 x 64 images
+vehicle_path = work_path + 'vehicles-dataset-final/'
+# test images
+test_img_path = work_path + 'test_images/'
+
+
+
+def process_movie(file_name):
+    '''
+    Load movie and replace frames with processed images and then save movie back to file
+    '''
+    movie_clip = VideoFileClip(work_path+file_name)
+    processed_clip = movie_clip.fl_image(mark_vehicles_on_frame)
+    processed_clip.write_videofile(work_path+'AK_'+file_name, audio=False, verbose=True, threads=6)
+
+
+
+def process_test_images():
+    '''
+    Read test images, process them, mark the vehicles on them and save them back to the folder
+    '''
+    global recent_frames
+    # Read test images and show search rectanbles on them
+    file_formats = ['*.jpg', '*.png']
+    # Iterate through files
+    for file_format in file_formats:
+        file_names = glob.glob(test_img_path+file_format)
+        for file_name_from in file_names:
+            # Load image
+            img = cv2.imread(file_name_from) 
+            # process image
+            recent_frames = []
+            img_rev = mark_vehicles_on_frame(img, threshold=2, verbose=False)
+            # save image
+            # Save image to file
+            file_name_to = 'processed_'+os.path.basename(file_name_from)
+            cv2.imwrite(test_img_path+file_name_to, img_rev) 
+
+
 
 
 def main():

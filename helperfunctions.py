@@ -9,7 +9,7 @@ import glob
 import cv2
 from skimage.feature import hog
 import numpy as np
-
+import os
 
 
 # path to the working repository
@@ -18,6 +18,8 @@ work_path = 'C:/Users/ali.khalili/Desktop/Car-ND/CarND-P5-Vehicle-Detection-and-
 non_vehicle_path = work_path + 'non-vehicles-dataset-final/'
 # path to the final vehicle dataset of 64 x 64 images
 vehicle_path = work_path + 'vehicles-dataset-final/'
+# test images
+test_img_path = work_path + 'test_images/'
 
 
 
@@ -264,7 +266,38 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
     # Return the image copy with boxes drawn
     return imcopy
     
-    
+  
+
+def visualize_search_windows_on_test_images(search_area, window_size, overlap=0.5, color=(0, 0, 255), thick=6):
+    '''
+    Iterate through test images and draw the search windows on the image and save to file again
+    search_area : array indicating the search area [[xmin,xmax],[ymin,ymax]] in fraction of the images size
+    window_size: search window size 
+    overlap: overlapping fraction of search windows
+    '''
+    # Read test images and show search rectanbles on them
+    file_formats = ['*.jpg', '*.png']
+    # Iterate through files
+    for file_format in file_formats:
+        file_names = glob.glob(test_img_path+file_format)
+        for file_name_from in file_names:
+            # Load image
+            img = cv2.imread(file_name_from)    
+            # Identify slide windows
+            x_start_stop = ((search_area[0]*img.shape[1]).round()).astype(int)
+            y_start_stop = ((search_area[1]*img.shape[0]).round()).astype(int)
+            windows_list = slide_window(img, 
+                                        x_start_stop=x_start_stop, 
+                                        y_start_stop=y_start_stop, 
+                                        xy_window=(window_size, window_size), 
+                                        xy_overlap=(overlap, overlap))
+            # Draw boxes on the image
+            img_rev = draw_boxes(img, windows_list, color=color, thick=thick)
+            # Save image to file
+            file_name_to = 'search_boxes_'+os.path.basename(file_name_from)
+            cv2.imwrite(test_img_path+file_name_to, img_rev)        
+        
+        
 
 def main():
     pass
