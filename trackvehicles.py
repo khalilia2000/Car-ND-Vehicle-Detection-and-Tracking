@@ -250,7 +250,7 @@ def process_movie(file_name):
 
 
 
-def process_test_images(verbose=False):
+def process_test_images(sequence=False, verbose=False):
     '''
     Read test images, process them, mark the vehicles on them and save them back to the folder
     '''
@@ -266,8 +266,10 @@ def process_test_images(verbose=False):
             # Recorde time if verbose = True
             if verbose:
                 t_start = time.time()
+            # recent rect_hot_windows each time if not processing sequnce images
+            if not sequence:
+                recent_hot_windows = []
             # process image
-            recent_hot_windows = []
             img_rev = mark_vehicles_on_frame(img, threshold=2, verbose=False)
             # Recorde time and print details if verbose = True
             if verbose:
