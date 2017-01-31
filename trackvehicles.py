@@ -38,7 +38,7 @@ color_space = 'BGR'     # color space of the images
 orient = 6              # HOG orientations
 pix_per_cell = 8        # HOG pixels per cell
 cell_per_block = 2      # HOG cells per block
-hog_channel = 'ALL'         # Can be 0, 1, 2, or 'ALL'
+hog_channel = 1         # Can be 0, 1, 2, or 'ALL'
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32          # Number of histogram bins
 spatial_feat = True     # Spatial features on or off
@@ -215,7 +215,6 @@ def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False):
     heatmap[heatmap <= threshold] = 0
     
     # Find bounding boxes around cars
-    labels = None
     labels = label(heatmap)
     # if verbose, print some details    
     if verbose:
