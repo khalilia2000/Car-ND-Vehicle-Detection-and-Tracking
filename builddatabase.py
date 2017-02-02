@@ -60,7 +60,7 @@ def delete_current_datasets(verbose=True):
         
         
 
-def copy_files(from_dir, to_dir, format_list, verbose=True):
+def copy_files(from_dir, to_dir, format_list, verbose=True, pre_fix=None):
     '''
     Copy files from vehicle datasets of GTI
     '''
@@ -76,7 +76,10 @@ def copy_files(from_dir, to_dir, format_list, verbose=True):
         # Iterate for each filename that isin the from_dir and matches teh file_format
         for file_name_from in file_names_from:
             # Extract the filename from the path
-            file_name_to = to_dir+os.path.basename(file_name_from)
+            if pre_fix:
+                file_name_to = to_dir+pre_fix+os.path.basename(file_name_from)
+            else:
+                file_name_to = to_dir+os.path.basename(file_name_from)
             # Copy file to the destination folder
             copyfile(file_name_from, file_name_to)
             
@@ -87,12 +90,12 @@ def copy_GTI_dataset(verbose=True):
     Copy files from the GTI dataset to the final dataset location
     '''
     # Copy the files to the vehicle dataset  
-    copy_files(GTI_path1, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
-    copy_files(GTI_path2, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
-    copy_files(GTI_path3, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
-    copy_files(GTI_path4, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
+    copy_files(GTI_path1, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='f')
+    copy_files(GTI_path2, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='l')
+    copy_files(GTI_path3, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='m')
+    copy_files(GTI_path4, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='r')
     # Copy the files to the non-vehidle dataset
-    copy_files(GTI_path5, non_vehicle_path, ['*.png','*.jpg'], verbose=verbose)
+    copy_files(GTI_path5, non_vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='n')
     
 
 

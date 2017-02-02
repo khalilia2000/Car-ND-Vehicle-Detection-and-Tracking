@@ -16,6 +16,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
 import time
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
@@ -45,13 +47,19 @@ spatial_feat = True     # Spatial features on or off
 hist_feat = True        # Histogram features on or off
 hog_feat = True         # HOG features on or off   
 # Search area coordinates and window sizes for far, mid-range and near cars
-far_search_window = (np.array([[0.1,0.9], [0.5, 1.0]]), 64)
-mid_search_window = (np.array([[0.05,0.95], [0.55, 1.0]]), 80)
-near_search_window = (np.array([[0.0,1.0], [0.6, 1.0]]), 128)
+far_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
+mid_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 80)
+near_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
+# parameter ranges for grid_search
+tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}, 
+                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
 
 
-
-def train_classifier(verbose=False):
+def train_classifier(vehicles_trn, 
+                     vehicles_tst, 
+                     non_vehicles_trn,
+                     non_vehicles_tst, 
+                     verbose=False, grid_search=False):
     '''
     Load images from both vehicles and non-vehicles datasets, 
     Extract features from all images,
@@ -60,6 +68,8 @@ def train_classifier(verbose=False):
     Train classifier, 
     Return classifier, and scaler objects
     if verbose is True, print some details during the operations
+    vehicles_trn, vehicles_tst, non_vehicles_trn, non_vehicles_tst are array of 
+    images pertainnig to each set.
     '''
     # Define global variables to use in this function
     global svc    
@@ -80,60 +90,95 @@ def train_classifier(verbose=False):
     
     # if verbose, print some details
     if verbose:
-        print('Reading datasets...')
-    # Read images from both datasets
-    vehicles, non_vehicles = read_datasets()
-    
-    # if verbose, print some details
-    if verbose:
         print('Extracting features and stacking them together...')
     # Extract all features
-    vehicle_features = extract_features(vehicles, color_space=color_space, 
+    t0=time.time()
+    vehicle_features_trn = extract_features(vehicles_trn, color_space=color_space, 
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
                         hist_feat=hist_feat, hog_feat=hog_feat)
-    non_vehicle_features = extract_features(non_vehicles, color_space=color_space, 
+    
+    
+    t1=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t1-t0, 2), 'Seconds to extract features from vehicle_features_trn...')
+    non_vehicle_features_trn = extract_features(non_vehicles_trn, color_space=color_space, 
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
                         hist_feat=hist_feat, hog_feat=hog_feat)    
+    
+
+    t2=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t2-t1, 2), 'Seconds to extract features from non_vehicle_features_trn...')
+    vehicle_features_tst = extract_features(vehicles_tst, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat=hist_feat, hog_feat=hog_feat)
+    
+    t3=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t3-t2, 2), 'Seconds to extract features from vehicle_features_tst...')
+    non_vehicle_features_tst = extract_features(non_vehicles_tst, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat=hist_feat, hog_feat=hog_feat)    
+    
+    t4=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t4-t3, 2), 'Seconds to extract features from vehicle_features_tst...')
     # Stack both datasets
-    X = np.vstack((vehicle_features, non_vehicle_features)).astype(np.float64)                        
+    X_trn = np.vstack((vehicle_features_trn, non_vehicle_features_trn)).astype(np.float64)                        
+    X_tst = np.vstack((vehicle_features_tst, non_vehicle_features_tst)).astype(np.float64)                        
     
     # if verbose, print some details
     if verbose:
         print('Scaling features, creating labels, and splitting data into train and test datasets...')
     # Fit a per-column scaler
-    X_scaler = StandardScaler().fit(X)
-    # Apply the scaler to X
-    scaled_X = X_scaler.transform(X)
+    X_scaler = StandardScaler().fit(X_trn)
+    # Apply the scaler to X_trn and X_tst
+    scaled_X_trn = X_scaler.transform(X_trn)
+    scaled_X_tst = X_scaler.transform(X_tst)
+    
     # Define the labels vector
-    y = np.hstack((np.ones(len(vehicle_features)), np.zeros(len(non_vehicle_features))))
-    # Split up data into randomized training and test sets
-    rand_state = np.random.randint(0, 100)
-    X_train, X_test, y_train, y_test = train_test_split(scaled_X, y, test_size=0.2, 
-                                                        stratify=y, random_state=rand_state)
+    y_trn = np.hstack((np.ones(len(vehicle_features_trn)), np.zeros(len(non_vehicle_features_trn))))
+    y_tst = np.hstack((np.ones(len(vehicle_features_tst)), np.zeros(len(non_vehicle_features_tst))))
     
     # if verbose, print some details
     if verbose:
         print('Using:',orient,'orientations',pix_per_cell,'pixels per cell and', cell_per_block,'cells per block')
-        print('Feature vector length:', len(X_train[0]))
+        print('Feature vector length:', len(scaled_X_trn[0]))
 
+    t0=time.time()
     # Use a linear SVC 
-    svc = LinearSVC()    
-    # Check the training time for the SVC
-    t=time.time()
-    svc.fit(X_train, y_train)
-    t2 = time.time()
+    if grid_search:
+        svc = GridSearchCV(SVC(C=1), tuned_parameters, cv=2, verbose=10)
+    else:    
+        svc = LinearSVC()    
+    svc.fit(scaled_X_trn, y_trn)
+
+    t1 = time.time()
     
     # if verbose, print some details
     if verbose:
-        print(round(t2-t, 2), 'Seconds to train SVC...')
-        # Check the score of the SVC
-        print('Test Accuracy of SVC = ', round(svc.score(X_test, y_test), 4))
+        print(round(t1-t0, 2), 'Seconds to train SVC...')
+        if grid_search:
+            print(svc.best_params_)
+        else:
+            # Check the score of the SVC
+            print('Test Accuracy of SVC = ', round(svc.score(scaled_X_tst, y_tst), 4))
 
     
     t_finish = time.time()
@@ -145,7 +190,7 @@ def train_classifier(verbose=False):
     
 
 
-def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=6):
+def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
     '''
     Draw bounding boxes around the cars identified in labels heatmap
     img: original image
@@ -224,7 +269,7 @@ def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False):
 
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
-    window_img = draw_labeled_bboxes(draw_image, labels, color=(0, 0, 255), thick=6)  
+    window_img = draw_labeled_bboxes(draw_image, labels, color=(0, 0, 255), thick=2)  
     
     return window_img
 
@@ -270,7 +315,7 @@ def process_test_images(sequence=False, verbose=False):
             if not sequence:
                 recent_hot_windows = []
             # process image
-            img_rev = mark_vehicles_on_frame(img, threshold=2, verbose=False)
+            img_rev = mark_vehicles_on_frame(img, threshold=0, verbose=False)
             # Recorde time and print details if verbose = True
             if verbose:
                 t_finish = time.time()
@@ -285,7 +330,18 @@ def process_test_images(sequence=False, verbose=False):
 
 
 def main():
-    pass
+    print('reading datasets')
+    a, b, c, d = read_datasets()
+    print('setting up the figure')
+    fig, axes = plt.subplots(4, 4, figsize=(8, 8))
+    print('selecting offset')
+    #offset = round(np.random.uniform(len(a)-20))
+    offset = 15000
+    print('offset = ', offset)
+    print('showing images')
+    for i, ax in enumerate(axes.flat):
+        ax.imshow(a[i+offset])
+        ax.axis('off')
 
 
 

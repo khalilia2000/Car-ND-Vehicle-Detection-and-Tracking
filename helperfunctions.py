@@ -23,6 +23,13 @@ test_img_path = work_path + 'test_images/'
 
 
 
+def base_name(x_str):
+    res_str = os.path.basename(x_str)[0:os.path.basename(x_str).find('.')]
+    if res_str.find('_') > 0:
+        res_str = res_str[0:res_str.find('_')]
+    return (len(res_str), res_str)
+
+
 def read_datasets():
     '''
     Read in cars and non-cars datasets
@@ -31,21 +38,38 @@ def read_datasets():
     file_formats = ['*.jpg', '*.png']
     # Initialize vehicle array
     vehicles = []
+    file_names = []
     for file_format in file_formats:
-        file_names = glob.glob(vehicle_path+file_format)
-        for file_name in file_names:
-            img = cv2.imread(file_name)    
-            vehicles.append(img)
+        file_names += glob.glob(vehicle_path+file_format)
+    file_names = sorted(file_names, key=base_name)
+    for file_name in file_names:
+        img = cv2.imread(file_name)    
+        vehicles.append(img)
     
     # Initialize non-vehicles array
     non_vehicles = []
+    file_names = []
     for file_format in file_formats:
-        file_names = glob.glob(non_vehicle_path+file_format)
-        for file_name in file_names:
-            img = cv2.imread(file_name)    
-            non_vehicles.append(img)
+        file_names += glob.glob(non_vehicle_path+file_format)
+    file_names = sorted(file_names, key=base_name)        
+    for file_name in file_names:
+        img = cv2.imread(file_name)    
+        non_vehicles.append(img)
     
-    return vehicles, non_vehicles
+    # Randomly split the dataset into train and test datasets
+    # Select test data set as a consequtive block to avoid contaminating datasets
+    test_size = 0.2
+    vehicle_test_size = round(test_size*len(vehicles))
+    non_vehicle_test_size = round(test_size*len(non_vehicles))
+    vehicle_index = round(np.random.uniform(len(vehicles)-vehicle_test_size))
+    non_vehicle_index = round(np.random.uniform(len(non_vehicles)-non_vehicle_test_size))
+    # Copy data into train and test datasets
+    vehicles_trn = vehicles[0:vehicle_index] + vehicles[vehicle_index+vehicle_test_size:]
+    vehicles_tst = vehicles[vehicle_index:vehicle_index+vehicle_test_size]
+    non_vehicles_trn = non_vehicles[0:non_vehicle_index] + non_vehicles[non_vehicle_index+non_vehicle_test_size:]
+    non_vehicles_tst = non_vehicles[non_vehicle_index:non_vehicle_index+non_vehicle_test_size]
+    
+    return vehicles_trn, vehicles_tst, non_vehicles_trn, non_vehicles_tst
     
 
 
@@ -268,35 +292,47 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
     
   
 
-def visualize_search_windows_on_test_images(search_area, window_size, overlap=0.5, color=(0, 0, 255), thick=6):
+def visualize_search_windows_on_test_images(search_area, window_size, overlap=0.5, color=(0, 0, 255), thick=6, write_to_file=True, images=None):
     '''
     Iterate through test images and draw the search windows on the image and save to file again
     search_area : array indicating the search area [[xmin,xmax],[ymin,ymax]] in fraction of the images size
     window_size: search window size 
     overlap: overlapping fraction of search windows
-    '''
+    '''    
     # Read test images and show search rectanbles on them
     file_formats = ['*.jpg', '*.png']
     # Iterate through files
-    for file_format in file_formats:
-        file_names = glob.glob(test_img_path+file_format)
-        for file_name_from in file_names:
-            # Load image
-            img = cv2.imread(file_name_from)    
-            # Identify slide windows
-            x_start_stop = ((search_area[0]*img.shape[1]).round()).astype(int)
-            y_start_stop = ((search_area[1]*img.shape[0]).round()).astype(int)
-            windows_list = slide_window(img, 
-                                        x_start_stop=x_start_stop, 
-                                        y_start_stop=y_start_stop, 
-                                        xy_window=(window_size, window_size), 
-                                        xy_overlap=(overlap, overlap))
-            # Draw boxes on the image
-            img_rev = draw_boxes(img, windows_list, color=color, thick=thick)
-            # Save image to file
-            file_name_to = 'search_boxes_'+os.path.basename(file_name_from)
+    imgs_rev = []
+    
+    if images is None:
+        images = []
+        for file_format in file_formats:
+            file_names = glob.glob(test_img_path+file_format)
+            for file_name_from in file_names:
+                # Load image
+                img = cv2.imread(file_name_from)    
+                images.append(img)
+    
+    counter = 0
+    for img in images:
+        # Identify slide windows
+        x_start_stop = ((search_area[0]*img.shape[1]).round()).astype(int)
+        y_start_stop = ((search_area[1]*img.shape[0]).round()).astype(int)
+        windows_list = slide_window(img, 
+                                    x_start_stop=x_start_stop, 
+                                    y_start_stop=y_start_stop, 
+                                    xy_window=(window_size, window_size), 
+                                    xy_overlap=(overlap, overlap))
+        # Draw boxes on the image
+        img_rev = draw_boxes(img, windows_list, color=color, thick=thick)
+        imgs_rev.append(img_rev)
+        # Save image to file
+        if write_to_file:
+            counter += 1
+            file_name_to = 'search_boxes_'+str(counter)+'.jpg'
             cv2.imwrite(test_img_path+file_name_to, img_rev)        
-        
+    # Return revised image
+    return imgs_rev
         
 
 def main():
