@@ -47,9 +47,14 @@ spatial_feat = True     # Spatial features on or off
 hist_feat = True        # Histogram features on or off
 hog_feat = True         # HOG features on or off   
 # Search area coordinates and window sizes for far, mid-range and near cars
-far_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
-mid_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 80)
-near_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
+search_window_1 = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
+search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
+search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 256)
+all_search_windows = [search_window_1, 
+                      search_window_2,
+                      search_window_3]
+
+
 
 
 def train_classifier(vehicles_trn, 
@@ -205,7 +210,8 @@ def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
 
 
 
-def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False, plot_heat_map=False):
+
+def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=True, plot_box=True):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
@@ -215,14 +221,12 @@ def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False, plot_heat_map=
     global recent_hot_windows
     global num_frames_to_keep
     global y_start_stop
-    global far_search_window
-    global mid_search_window
-    global near_search_window
+    global all_search_windows
     
     # Identify windows that are classified as cars for all images in the recent_hot_windows
     hot_windows = []
     # Iterate through search windows that are defined globally
-    for search_window in [far_search_window, mid_search_window, near_search_window]:
+    for search_window in all_search_windows:
         # Identiry window coordinates using slide_window
         x_start_stop = ((search_window[0][0]*frame_img.shape[1]).round()).astype(int)
         y_start_stop = ((search_window[0][1]*frame_img.shape[0]).round()).astype(int)
@@ -262,9 +266,17 @@ def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False, plot_heat_map=
 
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
-    window_img = draw_labeled_bboxes(draw_image, labels, color=(0, 0, 255), thick=2)  
+    if plot_box:
+        draw_image = draw_labeled_bboxes(draw_image, labels, color=(255, 0, 0), thick=1)  
+    if plot_heat_map:
+        scaled_heatmap = heatmap*100
+        scaled_heatmap[scaled_heatmap>255] = 255
+        scaled_heatmap[:,:,:2] = 0
+        draw_image = cv2.addWeighted(draw_image, 1, scaled_heatmap, 0.3, 0)
     
-    return window_img
+    return draw_image
+
+
 
 
 # path to the working repository
@@ -278,6 +290,7 @@ test_img_path = work_path + 'test_images/'
 
 
 
+
 def process_movie(file_name):
     '''
     Load movie and replace frames with processed images and then save movie back to file
@@ -285,6 +298,7 @@ def process_movie(file_name):
     movie_clip = VideoFileClip(work_path+file_name)
     processed_clip = movie_clip.fl_image(mark_vehicles_on_frame)
     processed_clip.write_videofile(work_path+'AK_'+file_name, audio=False, verbose=True, threads=6)
+
 
 
 
@@ -322,10 +336,15 @@ def process_test_images(sequence=False, verbose=False):
 
 
 def main():
+    global svc
+    global X_scaler
+    svc = None
+    X_scaler = None
     print('reading datasets')
     v_trn, v_tst, nv_trn, nv_tst = read_datasets()
     train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
     process_test_images(verbose=True)
+    
     
     # grid search
 #    global orient
