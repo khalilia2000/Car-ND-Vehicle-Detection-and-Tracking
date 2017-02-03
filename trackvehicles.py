@@ -37,8 +37,8 @@ svc = None              # linear SVC object
 X_scaler = None         # scaler object for normalizing inputs
 # hyper parameters for feature extraction
 color_space = 'BGR'     # color space of the images
-orient = 6              # HOG orientations
-pix_per_cell = 8        # HOG pixels per cell
+orient = 8              # HOG orientations
+pix_per_cell = 16        # HOG pixels per cell
 cell_per_block = 2      # HOG cells per block
 hog_channel = 1         # Can be 0, 1, 2, or 'ALL'
 spatial_size = (16, 16) # Spatial binning dimensions
@@ -50,9 +50,6 @@ hog_feat = True         # HOG features on or off
 far_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
 mid_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 80)
 near_search_window = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
-# parameter ranges for grid_search
-tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}, 
-                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
 
 
 def train_classifier(vehicles_trn, 
@@ -158,15 +155,14 @@ def train_classifier(vehicles_trn,
     
     # if verbose, print some details
     if verbose:
-        print('Using:',orient,'orientations',pix_per_cell,'pixels per cell and', cell_per_block,'cells per block')
+        print('Using:',orient,'orientations, ',
+              pix_per_cell,'pixels per cell, ', 
+              cell_per_block,'cells per block, and hog_channel = ', hog_channel)
         print('Feature vector length:', len(scaled_X_trn[0]))
 
     t0=time.time()
     # Use a linear SVC 
-    if grid_search:
-        svc = GridSearchCV(SVC(C=1), tuned_parameters, cv=2, verbose=10)
-    else:    
-        svc = LinearSVC()    
+    svc = LinearSVC()    
     svc.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
@@ -174,11 +170,8 @@ def train_classifier(vehicles_trn,
     # if verbose, print some details
     if verbose:
         print(round(t1-t0, 2), 'Seconds to train SVC...')
-        if grid_search:
-            print(svc.best_params_)
-        else:
-            # Check the score of the SVC
-            print('Test Accuracy of SVC = ', round(svc.score(scaled_X_tst, y_tst), 4))
+        # Check the score of the SVC
+        print('Test Accuracy of SVC = ', round(svc.score(scaled_X_tst, y_tst), 4))
 
     
     t_finish = time.time()
@@ -212,7 +205,7 @@ def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
 
 
 
-def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False):
+def mark_vehicles_on_frame(frame_img, threshold=3, verbose=False, plot_heat_map=False):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
@@ -331,18 +324,29 @@ def process_test_images(sequence=False, verbose=False):
 
 def main():
     print('reading datasets')
-    a, b, c, d = read_datasets()
-    print('setting up the figure')
-    fig, axes = plt.subplots(4, 4, figsize=(8, 8))
-    print('selecting offset')
-    #offset = round(np.random.uniform(len(a)-20))
-    offset = 15000
-    print('offset = ', offset)
-    print('showing images')
-    for i, ax in enumerate(axes.flat):
-        ax.imshow(a[i+offset])
-        ax.axis('off')
-
+    v_trn, v_tst, nv_trn, nv_tst = read_datasets()
+    train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
+    process_test_images(verbose=True)
+    
+    # grid search
+#    global orient
+#    global pix_per_cell
+#    global cell_per_block
+#    global hog_channel
+#    global num_frames_to_keep
+#    global recent_hot_windows
+#    global svc
+#    global X_scaler
+#    #
+#    for hog_channel in [0, 1, 2, 'ALL']:    
+#        print()
+#        num_frames_to_keep = 6  # number of frames to store
+#        recent_hot_windows = [] # list of hot windows identified on recent frames
+#        svc = None              # linear SVC object
+#        X_scaler = None         # scaler object for normalizing inputs
+#        train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
+    
+    pass
 
 
 if __name__ =='__main__':

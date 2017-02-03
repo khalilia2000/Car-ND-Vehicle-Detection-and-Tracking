@@ -38,21 +38,21 @@ def read_datasets():
     file_formats = ['*.jpg', '*.png']
     # Initialize vehicle array
     vehicles = []
-    file_names = []
+    file_names_vehicles = []
     for file_format in file_formats:
-        file_names += glob.glob(vehicle_path+file_format)
-    file_names = sorted(file_names, key=base_name)
-    for file_name in file_names:
+        file_names_vehicles += glob.glob(vehicle_path+file_format)
+    file_names_vehicles = sorted(file_names_vehicles, key=base_name)
+    for file_name in file_names_vehicles:
         img = cv2.imread(file_name)    
         vehicles.append(img)
     
     # Initialize non-vehicles array
     non_vehicles = []
-    file_names = []
+    file_names_non_vehicles = []
     for file_format in file_formats:
-        file_names += glob.glob(non_vehicle_path+file_format)
-    file_names = sorted(file_names, key=base_name)        
-    for file_name in file_names:
+        file_names_non_vehicles += glob.glob(non_vehicle_path+file_format)
+    file_names_non_vehicles = sorted(file_names_non_vehicles, key=base_name)        
+    for file_name in file_names_non_vehicles:
         img = cv2.imread(file_name)    
         non_vehicles.append(img)
     
@@ -64,12 +64,28 @@ def read_datasets():
     vehicle_index = round(np.random.uniform(len(vehicles)-vehicle_test_size))
     non_vehicle_index = round(np.random.uniform(len(non_vehicles)-non_vehicle_test_size))
     # Copy data into train and test datasets
-    vehicles_trn = vehicles[0:vehicle_index] + vehicles[vehicle_index+vehicle_test_size:]
-    vehicles_tst = vehicles[vehicle_index:vehicle_index+vehicle_test_size]
-    non_vehicles_trn = non_vehicles[0:non_vehicle_index] + non_vehicles[non_vehicle_index+non_vehicle_test_size:]
-    non_vehicles_tst = non_vehicles[non_vehicle_index:non_vehicle_index+non_vehicle_test_size]
+    # vehicles - training set
+    v_trn_imgs = vehicles[0:vehicle_index] + \
+                    vehicles[vehicle_index+vehicle_test_size:]
+    v_trn_fnames = file_names_vehicles[0:vehicle_index] + \
+                    file_names_vehicles[vehicle_index+vehicle_test_size:]
+    v_trn = (v_trn_imgs, v_trn_fnames)
+    # vehicles - test set
+    v_tst_imgs = vehicles[vehicle_index:vehicle_index+vehicle_test_size]
+    v_tst_fnames = file_names_vehicles[vehicle_index:vehicle_index+vehicle_test_size]
+    v_tst = (v_tst_imgs, v_tst_fnames)
+    # non-vehicles - training set
+    nv_trn_imgs = non_vehicles[0:non_vehicle_index] + \
+                    non_vehicles[non_vehicle_index+non_vehicle_test_size:]
+    nv_trn_fnames = file_names_non_vehicles[0:non_vehicle_index] + \
+                    file_names_non_vehicles[non_vehicle_index+non_vehicle_test_size:]
+    nv_trn = (nv_trn_imgs, nv_trn_fnames)
+    # non-vehicles - test set
+    nv_tst_imgs = non_vehicles[non_vehicle_index:non_vehicle_index+non_vehicle_test_size]
+    nv_tst_fnames = file_names_non_vehicles[non_vehicle_index:non_vehicle_index+non_vehicle_test_size]
+    nv_tst = (nv_tst_imgs, nv_tst_fnames)    
     
-    return vehicles_trn, vehicles_tst, non_vehicles_trn, non_vehicles_tst
+    return v_trn, v_tst, nv_trn, nv_tst
     
 
 
@@ -235,7 +251,7 @@ def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None],
     
 
 
-def search_windows(img, windows, clf, scaler, color_space='BGR', 
+def search_windows(img, windows_list, clf, scaler, color_space='BGR', 
                     spatial_size=(32, 32), hist_bins=32, 
                     hist_range=(0, 256), orient=9, 
                     pix_per_cell=8, cell_per_block=2, 
@@ -254,21 +270,27 @@ def search_windows(img, windows, clf, scaler, color_space='BGR',
     '''
     #Create an empty list to receive positive detection windows
     on_windows = []
+    #Create an empty list to store all sliding windows taken from the img
+    window_imgs = []
     #Iterate over all windows in the list
-    for window in windows:
+    for window in windows_list:
         # Extract the test window from original image
-        test_img = cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64))      
-        # Extract features for that window using single_img_features()
-        features = extract_features([test_img], color_space=color_space, 
-                            spatial_size=spatial_size, hist_bins=hist_bins, 
-                            orient=orient, pix_per_cell=pix_per_cell, 
-                            cell_per_block=cell_per_block, 
-                            hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                            hist_feat=hist_feat, hog_feat=hog_feat)
+        window_imgs.append(cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64)))      
+    
+    # Extract features for that window using single_img_features()
+    features_list = extract_features(window_imgs, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat=hist_feat, hog_feat=hog_feat)
+   
+    # Return those windows with positive classification outcome    
+    for window, features in zip(windows_list, features_list):
         # Scale extracted features to be fed to classifier
-        test_features = scaler.transform(np.array(features[0]).reshape(1, -1))
+        scaled_features = scaler.transform(np.array(features).reshape(1, -1))
         # Predict using your classifier
-        prediction = clf.predict(test_features)
+        prediction = clf.predict(scaled_features)
         # If positive (prediction == 1) then save the window
         if prediction == 1:
             on_windows.append(window)
