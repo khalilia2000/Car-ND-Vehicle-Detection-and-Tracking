@@ -377,6 +377,31 @@ def generate_additional_data(target_number=20000, verbose=False):
 
 
 
+def add_flipped():
+    '''
+    Add flipped images to both vehicles and non_vehicles datasets
+    '''
+    # consider all files in the folder to be images in the dataset.
+    file_format = '*.*'
+    # Obtain all filenames that match the file_format and are in the from_dir        
+    vehicle_file_names = glob.glob(vehicle_path+file_format)
+    non_vehicle_file_names = glob.glob(non_vehicle_path+file_format)
+    
+    for file_name_from in vehicle_file_names:
+        img = cv2.flip(cv2.imread(file_name_from), 1)
+        file_name_to = os.path.basename(file_name_from)
+        file_name_to = file_name_to[:file_name_to.find('.')]
+        file_name_to = vehicle_path+file_name_to+'_f.png'
+        cv2.imwrite(file_name_to, img)
+    
+    for file_name_from in non_vehicle_file_names:
+        img = cv2.flip(cv2.imread(file_name_from), 1)
+        file_name_to = os.path.basename(file_name_from)
+        file_name_to = file_name_to[:file_name_to.find('.')]
+        file_name_to = non_vehicle_path+file_name_to+'_f.png'
+        cv2.imwrite(file_name_to, img)
+
+
 
 def prepare_and_augment_datasets():
     '''
@@ -395,12 +420,13 @@ def prepare_and_augment_datasets():
     num_v, num_nv = count_images_in_dataset()
     # Augment the datasets to contain 20000 images each
     # Process and copy autti dataset    
-    goal_size = 25000
+    goal_size = 17500
     copy_autti_dataset(csv_filename='labels.csv', verbose=False, 
                        num_vehicles=goal_size-num_v, num_non_vehicles=goal_size-num_nv)
     # Print the number of images in datasets after augmenting
     count_images_in_dataset()
-    # TODO: flip images in both datasets
+    # Flip images and add to both datasets
+    add_flipped()
 
 
 

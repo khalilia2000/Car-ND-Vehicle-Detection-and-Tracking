@@ -321,7 +321,6 @@ def process_test_images(sequence=False, verbose=False):
 
 
 
-
 def main():
     print('reading datasets')
     v_trn, v_tst, nv_trn, nv_tst = read_datasets()
