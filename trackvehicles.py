@@ -38,13 +38,14 @@ X_scaler = None         # scaler object for normalizing inputs
 # hyper parameters for feature extraction
 color_space = 'BGR'     # color space of the images
 orient = 8              # HOG orientations
-pix_per_cell = 16        # HOG pixels per cell
+pix_per_cell = 8        # HOG pixels per cell
 cell_per_block = 2      # HOG cells per block
-hog_channel = 1         # Can be 0, 1, 2, or 'ALL'
+hog_channel = 'HSV_ALL'       # Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32          # Number of histogram bins
 spatial_feat = True     # Spatial features on or off
-hist_feat = True        # Histogram features on or off
+hist_feat_RGB = True    # Histogram features on or off on RGB image
+hist_feat_HSV = False   # Histogram features on or off on HSV image
 hog_feat = True         # HOG features on or off   
 # Search area coordinates and window sizes for far, mid-range and near cars
 search_window_1 = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
@@ -76,16 +77,7 @@ def train_classifier(vehicles_trn,
     # Define global variables to use in this function
     global svc    
     global X_scaler
-    global color_space
-    global orient
-    global pix_per_cell
-    global cell_per_block
-    global hog_channel
-    global spatial_size
-    global hist_bins
-    global spatial_feat
-    global hist_feat
-    global hog_feat 
+
     
     # Track time    
     t_start = time.time()    
@@ -100,7 +92,9 @@ def train_classifier(vehicles_trn,
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat=hist_feat, hog_feat=hog_feat)
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)
     
     
     t1=time.time()
@@ -112,7 +106,9 @@ def train_classifier(vehicles_trn,
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat=hist_feat, hog_feat=hog_feat)    
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)    
     
 
     t2=time.time()
@@ -124,7 +120,9 @@ def train_classifier(vehicles_trn,
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat=hist_feat, hog_feat=hog_feat)
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)
     
     t3=time.time()
     # if verbose, print some details
@@ -135,7 +133,9 @@ def train_classifier(vehicles_trn,
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat=hist_feat, hog_feat=hog_feat)    
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)    
     
     t4=time.time()
     # if verbose, print some details
@@ -219,9 +219,6 @@ def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=
     
     # Define global variables
     global recent_hot_windows
-    global num_frames_to_keep
-    global y_start_stop
-    global all_search_windows
     
     # Identify windows that are classified as cars for all images in the recent_hot_windows
     hot_windows = []
@@ -231,7 +228,7 @@ def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=
         x_start_stop = ((search_window[0][0]*frame_img.shape[1]).round()).astype(int)
         y_start_stop = ((search_window[0][1]*frame_img.shape[0]).round()).astype(int)
         xy_window = (search_window[1], search_window[1])
-        slide_windows = slide_window(frame_img, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
+        slide_windows = slide_window(frame_img.shape, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
                             xy_window=xy_window, xy_overlap=(0.5, 0.5))
         # Identify windows that are classified as cars                    
         hot_windows += search_windows(frame_img, slide_windows, svc, X_scaler, color_space=color_space, 
@@ -239,7 +236,9 @@ def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=
                                 orient=orient, pix_per_cell=pix_per_cell, 
                                 cell_per_block=cell_per_block, 
                                 hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                                hist_feat=hist_feat, hog_feat=hog_feat)
+                                hist_feat_RGB=hist_feat_RGB, 
+                                hist_feat_HSV=hist_feat_HSV, 
+                                hog_feat=hog_feat)
     # Append the results to the global list
     recent_hot_windows.append(hot_windows)
     if len(recent_hot_windows) > num_frames_to_keep:
@@ -261,6 +260,7 @@ def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=
     # if verbose, print some details    
     if verbose:
         print(labels[1], ' cars found')
+        print('maximum intensity of heatmap = ', heatmap.max())
         plt.imshow(labels[0], cmap='gray')
 
 
@@ -302,7 +302,7 @@ def process_movie(file_name):
 
 
 
-def process_test_images(sequence=False, verbose=False):
+def process_test_images(sequence=False, verbose=False, threshold=10):
     '''
     Read test images, process them, mark the vehicles on them and save them back to the folder
     '''
@@ -322,7 +322,7 @@ def process_test_images(sequence=False, verbose=False):
             if not sequence:
                 recent_hot_windows = []
             # process image
-            img_rev = mark_vehicles_on_frame(img, threshold=0, verbose=False)
+            img_rev = mark_vehicles_on_frame(img, threshold=threshold, verbose=verbose)
             # Recorde time and print details if verbose = True
             if verbose:
                 t_finish = time.time()
@@ -332,10 +332,9 @@ def process_test_images(sequence=False, verbose=False):
             file_name_to = 'processed_'+os.path.basename(file_name_from)
             cv2.imwrite(test_img_path+file_name_to, img_rev) 
 
+    
 
-
-
-def main():
+def read_data_and_train_classifier():
     global svc
     global X_scaler
     svc = None
@@ -343,27 +342,19 @@ def main():
     print('reading datasets')
     v_trn, v_tst, nv_trn, nv_tst = read_datasets()
     train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
-    process_test_images(verbose=True)
-    
-    
-    # grid search
-#    global orient
-#    global pix_per_cell
-#    global cell_per_block
-#    global hog_channel
-#    global num_frames_to_keep
-#    global recent_hot_windows
+
+
+
+def main():
+  
 #    global svc
 #    global X_scaler
-#    #
-#    for hog_channel in [0, 1, 2, 'ALL']:    
-#        print()
-#        num_frames_to_keep = 6  # number of frames to store
-#        recent_hot_windows = [] # list of hot windows identified on recent frames
-#        svc = None              # linear SVC object
-#        X_scaler = None         # scaler object for normalizing inputs
-#        train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
-    
+#    svc = None
+#    X_scaler = None
+#    print('reading datasets')
+#    v_trn, v_tst, nv_trn, nv_tst = read_datasets()
+#    train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
+#    process_test_images(sequence=True, verbose=True)
     pass
 
 

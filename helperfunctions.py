@@ -151,7 +151,7 @@ def color_hist(img, nbins=32, bins_range=(0, 256)):
 def extract_features(imgs, color_space='BGR', spatial_size=(32, 32),
                         hist_bins=32, orient=9, 
                         pix_per_cell=8, cell_per_block=2, hog_channel=0,
-                        spatial_feat=True, hist_feat=True, hog_feat=True):    
+                        spatial_feat=True, hist_feat_RGB=True, hist_feat_HSV=True, hog_feat=True):    
     '''
     Extract features from a list of images
     color_space: expected color space of the image
@@ -160,7 +160,8 @@ def extract_features(imgs, color_space='BGR', spatial_size=(32, 32),
     pix_per_cell, cell_per_block, orient: passed to get_hog_features()
     hog_channel: 0, 1, 2 or 'ALL', indicates which image channel to be passed on to get_hot_features()
     spatial_feat: if True calls bin_spatial()
-    hist_feat: if True calls color_hist()
+    hist_feat_RGB: if True calls color_hist() on RGB image
+    hist_feat_HSV: if True calls color_hist() on HSV image
     hog_feat: if True calls get_hog_features()
     '''    
     # Create a list to append feature vectors to
@@ -168,33 +169,54 @@ def extract_features(imgs, color_space='BGR', spatial_size=(32, 32),
     # Iterate through the list of images
     for image in imgs:
         single_image_features = []
-        # Apply color conversion if other than 'RGB'
+        # Make RGB converted image if other than 'RGB'
         color_space_change_code = eval('cv2.COLOR_'+color_space+'2RGB')
         if color_space != 'RGB':
-            feature_image = cv2.cvtColor(image, color_space_change_code)
+            feature_image_RGB = cv2.cvtColor(image, color_space_change_code)
         else: 
-            feature_image = np.copy(image)      
+            feature_image_RGB = np.copy(image)      
+         
+        # Make HSV converted image if other than 'HSV'
+        color_space_change_code = eval('cv2.COLOR_'+color_space+'2HSV')
+        if color_space != 'HSV':
+            feature_image_HSV = cv2.cvtColor(image, color_space_change_code)
+        else: 
+            feature_image_HSV = np.copy(image)                  
         
         # Extract spatial features
         if spatial_feat == True:
-            spatial_features = bin_spatial(feature_image, size=spatial_size)
+            spatial_features = bin_spatial(feature_image_RGB, size=spatial_size)
             single_image_features.append(spatial_features)
-        # Extract color features in histogram form
-        if hist_feat == True:
-            hist_features = color_hist(feature_image, nbins=hist_bins)
+        # Extract color features in histogram form RGB image
+        if hist_feat_RGB == True:
+            hist_features = color_hist(feature_image_RGB, nbins=hist_bins)
+            single_image_features.append(hist_features)
+        # Extract color features in histogram form from HSV image
+        if hist_feat_HSV == True:
+            hist_features = color_hist(feature_image_HSV, nbins=hist_bins)
             single_image_features.append(hist_features)
         # Extract hog features
         if hog_feat == True:
             # Check for the image channel to be passed on to hog_features function
-            if hog_channel == 'ALL':
+            if hog_channel == 'RGB_ALL':
                 hog_features = []
-                for channel in range(feature_image.shape[2]):
-                    hog_features.append(get_hog_features(feature_image[:,:,channel], 
+                for channel in range(feature_image_RGB.shape[2]):
+                    hog_features.append(get_hog_features(feature_image_RGB[:,:,channel], 
                                         orient, pix_per_cell, cell_per_block, 
                                         vis=False, feature_vec=True))
                 hog_features = np.ravel(hog_features)        
-            else:
-                hog_features = get_hog_features(feature_image[:,:,hog_channel], orient, 
+            elif hog_channel == 'HSV_ALL':
+                hog_features = []
+                for channel in range(feature_image_HSV.shape[2]):
+                    hog_features.append(get_hog_features(feature_image_HSV[:,:,channel], 
+                                        orient, pix_per_cell, cell_per_block, 
+                                        vis=False, feature_vec=True))
+                hog_features = np.ravel(hog_features)        
+            elif hog_channel in ['R', 'G', 'B']:
+                hog_features = get_hog_features(feature_image_RGB[:,:,['R', 'G', 'B'].index(hog_channel)], orient, 
+                            pix_per_cell, cell_per_block, vis=False, feature_vec=True)
+            elif hog_channel in ['H', 'S', 'V']:
+                hog_features = get_hog_features(feature_image_HSV[:,:,['H', 'S', 'V'].index(hog_channel)], orient, 
                             pix_per_cell, cell_per_block, vis=False, feature_vec=True)
             # Append the new feature vector to the features list
             single_image_features.append(hog_features)
@@ -205,12 +227,12 @@ def extract_features(imgs, color_space='BGR', spatial_size=(32, 32),
 
     
 
-def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None], 
+def slide_window(img_shape, x_start_stop=[None, None], y_start_stop=[None, None], 
                     xy_window=(64, 64), xy_overlap=(0.5, 0.5)):
     '''
     Takes an image, start and stop positions in both x and y, window size in x and y directions
     and overlap fraction in both x and y directions and returns list of window coordinates.
-    img: subject image
+    img_shape: subject image shape
     x_start_stop: start and end position in x direction (array of size 2)
     y_start_stop: start and end position in y direction (array of size 2)
     xy_window: size of the window in both x and y directions (tuple)
@@ -220,11 +242,11 @@ def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None],
     if x_start_stop[0] == None:
         x_start_stop[0] = 0
     if x_start_stop[1] == None:
-        x_start_stop[1] = img.shape[1]
+        x_start_stop[1] = img_shape[1]
     if y_start_stop[0] == None:
         y_start_stop[0] = 0
     if y_start_stop[1] == None:
-        y_start_stop[1] = img.shape[0]
+        y_start_stop[1] = img_shape[0]
     # Compute the span of the region to be searched    
     xspan = x_start_stop[1] - x_start_stop[0]
     yspan = y_start_stop[1] - y_start_stop[0]
@@ -256,7 +278,9 @@ def search_windows(img, windows_list, clf, scaler, color_space='BGR',
                     hist_range=(0, 256), orient=9, 
                     pix_per_cell=8, cell_per_block=2, 
                     hog_channel=0, spatial_feat=True, 
-                    hist_feat=True, hog_feat=True):
+                    hist_feat_RGB=True, 
+                    hist_feat_HSV=True, 
+                    hog_feat=True):
     '''
     Search image using windows and assess the predictions
     color_space: expected color space of the image
@@ -283,7 +307,9 @@ def search_windows(img, windows_list, clf, scaler, color_space='BGR',
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat=hist_feat, hog_feat=hog_feat)
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)
    
     # Return those windows with positive classification outcome    
     for window, features in zip(windows_list, features_list):
@@ -340,7 +366,7 @@ def visualize_search_windows_on_test_images(search_area, window_size, overlap=0.
         # Identify slide windows
         x_start_stop = ((search_area[0]*img.shape[1]).round()).astype(int)
         y_start_stop = ((search_area[1]*img.shape[0]).round()).astype(int)
-        windows_list = slide_window(img, 
+        windows_list = slide_window(img.shape, 
                                     x_start_stop=x_start_stop, 
                                     y_start_stop=y_start_stop, 
                                     xy_window=(window_size, window_size), 
