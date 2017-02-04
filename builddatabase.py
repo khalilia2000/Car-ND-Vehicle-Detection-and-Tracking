@@ -14,7 +14,11 @@ import numpy as np
 
 
 # path to the working repository
-work_path = 'C:/Users/ali.khalili/Desktop/Car-ND/CarND-P5-Vehicle-Detection-and-Tracking/'
+home_computer = True
+if home_computer == True:
+    work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
+else:
+    work_path = 'C:/Users/ali.khalili/Desktop/Car-ND/CarND-P5-Vehicle-Detection-and-Tracking/'
 # path to the final non-vehicle dataset of 64 x 64 images
 non_vehicle_path = work_path + 'non-vehicles-dataset-final/'
 # path to the final vehicle dataset of 64 x 64 images
