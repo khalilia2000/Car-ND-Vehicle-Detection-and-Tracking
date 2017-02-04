@@ -12,6 +12,8 @@ import pandas as pd
 import cv2
 import numpy as np
 
+from helperfunctions import slide_window
+
 
 # path to the working repository
 home_computer = True
@@ -64,7 +66,7 @@ def delete_current_datasets(verbose=True):
         
         
 
-def copy_files(from_dir, to_dir, format_list, verbose=True):
+def copy_files(from_dir, to_dir, format_list, verbose=True, pre_fix=None):
     '''
     Copy files from vehicle datasets of GTI
     '''
@@ -80,7 +82,10 @@ def copy_files(from_dir, to_dir, format_list, verbose=True):
         # Iterate for each filename that isin the from_dir and matches teh file_format
         for file_name_from in file_names_from:
             # Extract the filename from the path
-            file_name_to = to_dir+os.path.basename(file_name_from)
+            if pre_fix:
+                file_name_to = to_dir+pre_fix+os.path.basename(file_name_from)
+            else:
+                file_name_to = to_dir+os.path.basename(file_name_from)
             # Copy file to the destination folder
             copyfile(file_name_from, file_name_to)
             
@@ -91,12 +96,12 @@ def copy_GTI_dataset(verbose=True):
     Copy files from the GTI dataset to the final dataset location
     '''
     # Copy the files to the vehicle dataset  
-    copy_files(GTI_path1, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
-    copy_files(GTI_path2, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
-    copy_files(GTI_path3, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
-    copy_files(GTI_path4, vehicle_path, ['*.png','*.jpg'], verbose=verbose)
+    copy_files(GTI_path1, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='f')
+    copy_files(GTI_path2, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='l')
+    copy_files(GTI_path3, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='m')
+    copy_files(GTI_path4, vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='r')
     # Copy the files to the non-vehidle dataset
-    copy_files(GTI_path5, non_vehicle_path, ['*.png','*.jpg'], verbose=verbose)
+    copy_files(GTI_path5, non_vehicle_path, ['*.png','*.jpg'], verbose=verbose, pre_fix='n')
     
 
 
@@ -118,7 +123,7 @@ def copy_Extras_dataset(verbose=True):
 
     
 
-def copy_autti_dataset(csv_filename='labels.csv', verbose=True):
+def copy_autti_dataset(csv_filename='labels.csv', verbose=True, num_vehicles=10000, num_non_vehicles=10000):
     '''
     Extract and add all images from the autti dataset to the final location
     '''
@@ -129,26 +134,72 @@ def copy_autti_dataset(csv_filename='labels.csv', verbose=True):
 
     # Read the cvs file accompanied with the dataset
     df = pd.read_csv(AUTTI_path+csv_filename, delimiter=' ', header=None, names=['file_name', 'x_min', 'y_min', 'x_max', 'y_max', 'occluded', 'label', 'attribute'])
+    df_car = df.loc[df['label'].isin(['car','truck'])]
+    df_non_car = df.loc[~df['label'].isin(['car','truck'])]   
     
+    # Extract vehicles i.e. cars and trucks
+    num_v = 0
     # Iterate through the list of objects in the csv file
-    for i in range(len(df)):
+    for i in range(len(df_car)):
+        # Return if the set number of images are generated
+        if (num_v >= num_vehicles):
+            break    
         # Extract field values for each row in the cvs file
-        file_name = df['file_name'][i]        
-        x_min = df['x_min'][i]
-        x_max = df['x_max'][i]
-        y_min = df['y_min'][i]
-        y_max = df['y_max'][i]
-        label = df['label'][i]
+        file_name = df_car.iloc[i]['file_name']        
+        x_min = df_car.iloc[i]['x_min']
+        x_max = df_car.iloc[i]['x_max']
+        y_min = df_car.iloc[i]['y_min']
+        y_max = df_car.iloc[i]['y_max']
         # Read the image
         img = cv2.imread(AUTTI_path+file_name)
         # Extract the image related to the object
         img_ext = img[y_min:y_max,x_min:x_max,:]
-        # Write the image back
-        if label=='car' or label=='truck':
-            cv2.imwrite(vehicle_path+str(i)+'.png',img_ext)
-        else:
-            cv2.imwrite(non_vehicle_path+str(i)+'.png',img_ext)
+        # Write the image pieces back to file after extracting the pieces using slide_window
+        window_size = min(img_ext.shape[0], img_ext.shape[1])
+        xss = [0, img_ext.shape[1]]
+        yss = [0, img_ext.shape[0]]
+        windows_list = slide_window(img_ext.shape, x_start_stop=xss, y_start_stop=yss, xy_window=(window_size,window_size))
+        # counter for number of images created from img_ext
+        counter = 0
+        for window in windows_list:
+            if (num_v < num_vehicles):
+                cv2.imwrite(vehicle_path+'autti+'+str(i)+'+'+str(counter)+'.png',
+                            cv2.resize(img_ext[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64)))
+                num_v += 1
+            counter += 1
+     
+    # Extract non-vehicles 
+    num_nv = 0
+    # Iterate through the list of objects in the csv file
+    for i in range(len(df_non_car)):
+        # Return if the set number of images are generated
+        if (num_nv >= num_non_vehicles):
+            break    
+        # Extract field values for each row in the cvs file
+        file_name = df_non_car.iloc[i]['file_name']
+        x_min = df_non_car.iloc[i]['x_min']
+        x_max = df_non_car.iloc[i]['x_max']
+        y_min = df_non_car.iloc[i]['y_min']
+        y_max = df_non_car.iloc[i]['y_max']
+        # Read the image
+        img = cv2.imread(AUTTI_path+file_name)
+        # Extract the image related to the object
+        img_ext = img[y_min:y_max,x_min:x_max,:]
+        # Write the image pieces back to file after extracting the pieces using slide_window
+        window_size = min(img_ext.shape[0], img_ext.shape[1])
+        xss = [0, img_ext.shape[1]]
+        yss = [0, img_ext.shape[0]]
+        windows_list = slide_window(img_ext.shape, x_start_stop=xss, y_start_stop=yss, xy_window=(window_size,window_size))
+        # counter for number of images created from img_ext
+        counter = 0
+        for window in windows_list:
+            if (num_nv < num_non_vehicles):
+                cv2.imwrite(non_vehicle_path+'autti+'+str(i)+'+'+str(counter)+'.png',
+                            cv2.resize(img_ext[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64)))
+                num_nv += 1
+            counter += 1
             
+       
     # Return df for further manipulation if required
     return df
 
@@ -217,17 +268,19 @@ def count_images_in_dataset(verbose=True):
 
 
 
-def generate_additional_data(target_number=20000, verbose=False):
+def generate_additional_data(v_path, nv_path, target_number=20000, verbose=False):
     '''
     Generate additional data by tweaking images in both vehicle and non-vehicle datasets until the 
     target number of images is available in each dataset.
+    v_path: path to vehicle images
+    nv_path: path to non-vehicle images
     '''
     
     # consider all files in the folder to be images in the dataset.
     file_format = '*.*'
     # Obtain all filenames that match the file_format and are in the from_dir        
-    vehicle_file_names = glob.glob(vehicle_path+file_format)
-    non_vehicle_file_names = glob.glob(non_vehicle_path+file_format)    
+    vehicle_file_names = glob.glob(v_path+file_format)
+    non_vehicle_file_names = glob.glob(nv_path+file_format)    
     
     # Set transformation parameters
     # Maximum absolute number of pixels for transformation - i.e. 5 means from -5 to 5 pixels
@@ -279,7 +332,7 @@ def generate_additional_data(target_number=20000, verbose=False):
     
         file_name_to = os.path.basename(file_name)
         file_name_to = file_name_to[:file_name_to.find('.')]
-        file_name_to = vehicle_path+file_name_to+'_'+str(i)+'.png'
+        file_name_to = v_path+file_name_to+'_'+str(i)+'.png'
         if verbose:
             print(os.path.basename(file_name_to))
         cv2.imwrite(file_name_to, img)
@@ -323,15 +376,40 @@ def generate_additional_data(target_number=20000, verbose=False):
     
         file_name_to = os.path.basename(file_name)
         file_name_to = file_name_to[:file_name_to.find('.')]
-        file_name_to = non_vehicle_path+file_name_to+'_'+str(i)+'.png'
+        file_name_to = nv_path+file_name_to+'_'+str(i)+'.png'
         if verbose:
             print(os.path.basename(file_name_to))
         cv2.imwrite(file_name_to, img)
 
 
 
+def add_flipped():
+    '''
+    Add flipped images to both vehicles and non_vehicles datasets
+    '''
+    # consider all files in the folder to be images in the dataset.
+    file_format = '*.*'
+    # Obtain all filenames that match the file_format and are in the from_dir        
+    vehicle_file_names = glob.glob(vehicle_path+file_format)
+    non_vehicle_file_names = glob.glob(non_vehicle_path+file_format)
+    
+    for file_name_from in vehicle_file_names:
+        img = cv2.flip(cv2.imread(file_name_from), 1)
+        file_name_to = os.path.basename(file_name_from)
+        file_name_to = file_name_to[:file_name_to.find('.')]
+        file_name_to = vehicle_path+file_name_to+'_f.png'
+        cv2.imwrite(file_name_to, img)
+    
+    for file_name_from in non_vehicle_file_names:
+        img = cv2.flip(cv2.imread(file_name_from), 1)
+        file_name_to = os.path.basename(file_name_from)
+        file_name_to = file_name_to[:file_name_to.find('.')]
+        file_name_to = non_vehicle_path+file_name_to+'_f.png'
+        cv2.imwrite(file_name_to, img)
 
-def prepare_and_augment_datasets():
+
+
+def prepare_and_augment_datasets(goal_size = 30000):
     '''
     Copy, extrace and/or save all relevant files to the dataset locations
     Augment the dataset to contain equal number of images
@@ -345,11 +423,43 @@ def prepare_and_augment_datasets():
     # Copy and save images from KITTI dataset
     copy_Extras_dataset(verbose=False)
     # Print the number of images in datasets before augmenting
-    count_images_in_dataset()
+    num_v, num_nv = count_images_in_dataset()
     # Augment the datasets to contain 20000 images each
-    generate_additional_data(target_number=20000, verbose=False)
+    # Process and copy autti dataset    
+    copy_autti_dataset(csv_filename='labels.csv', verbose=False, 
+                       num_vehicles=goal_size-num_v, num_non_vehicles=goal_size-num_nv)
     # Print the number of images in datasets after augmenting
     count_images_in_dataset()
+    # Flip images and add to both datasets
+    add_flipped()
+
+
+
+def generate_from_movie_stream():
+    '''
+    additional training data from a captured video of the road
+    '''
+    file_format = '*.png'
+    v_path = work_path+'vehicles-additional/'
+    nv_path = work_path+'non-vehicles-additional/'
+    file_names_v = glob.glob(v_path+file_format)
+    file_names_nv = glob.glob(nv_path+file_format)
+    
+    for fname in file_names_v:
+        img = cv2.imread(fname)
+        rev_img = cv2.resize(img, (64, 64))
+        cv2.imwrite(fname, rev_img)
+    
+    for fname in file_names_nv:
+        img = cv2.imread(fname)
+        rev_img = cv2.resize(img, (64, 64))
+        cv2.imwrite(fname, rev_img)
+    
+    generate_additional_data(v_path, nv_path, target_number=1000, verbose=False)
+    
+    # Copy and save images from captured videos (personal)
+    copy_files(v_path, vehicle_path, ["*.png"], verbose=True, pre_fix=None)
+    copy_files(nv_path, non_vehicle_path, ["*.png"], verbose=True, pre_fix=None)
 
 
 
