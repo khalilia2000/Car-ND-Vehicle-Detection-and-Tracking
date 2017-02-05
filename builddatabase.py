@@ -43,6 +43,13 @@ AUTTI_path = work_path + 'object-dataset-autti/'
 # Soruce folder path fro Crowdai dataset
 CrowdAI_path = work_path + 'object-detection-crowdai/'
 
+# Additional training data
+v_add_path = work_path+'vehicles-additional/'
+nv_add_path = work_path+'non-vehicles-additional/'
+
+# test images
+test_img_path = work_path + 'test_images/'
+
 
 def delete_current_datasets(verbose=True):
     '''
@@ -437,15 +444,53 @@ def prepare_and_augment_datasets(goal_size = 25000):
 
 
 
-def generate_from_movie_stream():
+def extract_data_from_test_images(num_extracts_per_photo=30):
+    '''
+    Extract some random frames from test images
+    '''    
+    # Define search windows
+    search_window_0 = (np.array([[0.0,1.0], [0.0, 1.0]]), 0)
+    all_search_windows = [search_window_0]    
+    
+    # Define file types
+    file_format = '*.*'
+    # Obtain all filenames that match the file_format and are in the from_dir    
+    file_names = glob.glob(test_img_path+file_format)
+    # Iterate through all files
+    counter = 0
+    for f_name in file_names:
+        # Read the file  and determine all sliding windows
+        img = cv2.imread(f_name)
+        windows = []
+        for s_window in all_search_windows:
+            x_start_stop = ((s_window[0][0]*img.shape[1]).round()).astype(int)
+            y_start_stop = ((s_window[0][1]*img.shape[0]).round()).astype(int)
+            xy_window = (min(img.shape[0], img.shape[1])//2, min(img.shape[0], img.shape[1])//2)
+            windows += slide_window(img.shape, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
+                        xy_window=xy_window, xy_overlap=(0.5, 0.5))
+        if len(windows) > 0:
+            # Randomly select windows to extract images
+            ch_windows_indices = np.random.choice(len(windows), size=min(num_extracts_per_photo, len(windows)), replace=False)
+            # Iterate through windows in ch_windows
+            for index in ch_windows_indices:
+                window = windows[index]
+                ch_img = cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64))      
+                # Set file names to save
+                file_name_to = test_img_path+'Capture'+str(counter)+'.png'
+                # Save image to file
+                cv2.imwrite(file_name_to, ch_img)
+                # Increment counter
+                counter += 1
+    
+    
+    
+def clean_data_from_test_images():
     '''
     additional training data from a captured video of the road
     '''
     file_format = '*.png'
-    v_path = work_path+'vehicles-additional/'
-    nv_path = work_path+'non-vehicles-additional/'
-    file_names_v = glob.glob(v_path+file_format)
-    file_names_nv = glob.glob(nv_path+file_format)
+    file_names_v = glob.glob(v_add_path+file_format)
+    file_names_nv = glob.glob(nv_add_path+file_format)
     
     for fname in file_names_v:
         img = cv2.imread(fname)
@@ -457,11 +502,11 @@ def generate_from_movie_stream():
         rev_img = cv2.resize(img, (64, 64))
         cv2.imwrite(fname, rev_img)
     
-    generate_additional_data(v_path, nv_path, target_number=1000, verbose=False)
+    generate_additional_data(v_add_path, nv_add_path, target_number=1000, verbose=False)
     
     # Copy and save images from captured videos (personal)
-    copy_files(v_path, vehicle_path, ["*.png"], verbose=True, pre_fix=None)
-    copy_files(nv_path, non_vehicle_path, ["*.png"], verbose=True, pre_fix=None)
+    copy_files(v_add_path, vehicle_path, ["*.png"], verbose=True, pre_fix=None)
+    copy_files(nv_add_path, non_vehicle_path, ["*.png"], verbose=True, pre_fix=None)
 
 
 
