@@ -409,7 +409,7 @@ def add_flipped():
 
 
 
-def prepare_and_augment_datasets(goal_size = 30000):
+def prepare_and_augment_datasets(goal_size = 25000):
     '''
     Copy, extrace and/or save all relevant files to the dataset locations
     Augment the dataset to contain equal number of images
@@ -432,6 +432,8 @@ def prepare_and_augment_datasets(goal_size = 30000):
     count_images_in_dataset()
     # Flip images and add to both datasets
     add_flipped()
+    # Print the number of images in datasets after augmenting
+    count_images_in_dataset()
 
 
 

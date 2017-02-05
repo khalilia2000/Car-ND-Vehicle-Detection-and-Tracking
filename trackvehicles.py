@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 import time
 from scipy.ndimage.measurements import label
@@ -47,11 +48,15 @@ spatial_feat = True     # Spatial features on or off
 hist_feat_RGB = True    # Histogram features on or off on RGB image
 hist_feat_HSV = False   # Histogram features on or off on HSV image
 hog_feat = True         # HOG features on or off   
+# Threshold for procesing heatmaps
+thresh=10
 # Search area coordinates and window sizes for far, mid-range and near cars
+search_window_0 = (np.array([[0.0,1.0], [0.5, 1.0]]), 32)
 search_window_1 = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
-search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
-search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 256)
-all_search_windows = [search_window_1, 
+search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
+search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
+all_search_windows = [search_window_0,
+                      search_window_1, 
                       search_window_2,
                       search_window_3]
 
@@ -167,7 +172,8 @@ def train_classifier(vehicles_trn,
 
     t0=time.time()
     # Use a linear SVC 
-    svc = LinearSVC()    
+    #svc = LinearSVC()    
+    svc = RandomForestClassifier(n_estimators=20, max_features=100)
     svc.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
@@ -211,7 +217,7 @@ def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
 
 
 
-def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=True, plot_box=True):
+def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=True, plot_box=True):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
@@ -253,7 +259,7 @@ def mark_vehicles_on_frame(frame_img, threshold=4, verbose=False, plot_heat_map=
         plt.imshow(heatmap)
     
     # Zero out pixels below the threshold
-    heatmap[heatmap <= threshold] = 0
+    heatmap[heatmap <= thresh] = 0
     
     # Find bounding boxes around cars
     labels = label(heatmap)
@@ -295,10 +301,15 @@ test_img_path = work_path + 'test_images/'
 
 
 
-def process_movie(file_name):
+def process_movie(file_name, threshold=10, c_space='RGB'):
     '''
     Load movie and replace frames with processed images and then save movie back to file
     '''
+    global thresh
+    global color_space
+    thresh = threshold 
+    color_space = c_space
+    
     movie_clip = VideoFileClip(work_path+file_name)
     processed_clip = movie_clip.fl_image(mark_vehicles_on_frame)
     processed_clip.write_videofile(work_path+'AK_'+file_name, audio=False, verbose=True, threads=6)
@@ -306,11 +317,15 @@ def process_movie(file_name):
 
 
 
-def process_test_images(sequence=False, verbose=False, threshold=10):
+def process_test_images(sequence=False, verbose=False, threshold=4):
     '''
     Read test images, process them, mark the vehicles on them and save them back to the folder
     '''
     global recent_hot_windows
+    global thresh
+    
+    thresh = threshold
+    
     # Read test images and show search rectanbles on them
     file_formats = ['*.jpg', '*.png']
     # Iterate through files
@@ -326,7 +341,7 @@ def process_test_images(sequence=False, verbose=False, threshold=10):
             if not sequence:
                 recent_hot_windows = []
             # process image
-            img_rev = mark_vehicles_on_frame(img, threshold=threshold, verbose=verbose)
+            img_rev = mark_vehicles_on_frame(img, verbose=verbose)
             # Recorde time and print details if verbose = True
             if verbose:
                 t_finish = time.time()

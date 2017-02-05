@@ -173,9 +173,9 @@ def extract_features(imgs, color_space='BGR', spatial_size=(32, 32),
     # Iterate through the list of images
     for image in imgs:
         single_image_features = []
-        # Make RGB converted image if other than 'RGB'
-        color_space_change_code = eval('cv2.COLOR_'+color_space+'2RGB')
+        # Make RGB converted image if other than 'RGB'        
         if color_space != 'RGB':
+            color_space_change_code = eval('cv2.COLOR_'+color_space+'2RGB')
             feature_image_RGB = cv2.cvtColor(image, color_space_change_code)
         else: 
             feature_image_RGB = np.copy(image)      
