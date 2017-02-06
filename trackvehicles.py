@@ -217,7 +217,7 @@ def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
 
 
 
-def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=True, plot_box=True):
+def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
