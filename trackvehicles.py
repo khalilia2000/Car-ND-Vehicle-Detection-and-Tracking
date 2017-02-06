@@ -15,6 +15,7 @@ from helperfunctions import visualize_search_windows_on_test_images
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.externals import joblib
 import time
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
@@ -37,12 +38,12 @@ color_space = 'BGR'     # color space of the images
 orient = 8              # HOG orientations
 pix_per_cell = 8        # HOG pixels per cell
 cell_per_block = 2      # HOG cells per block
-hog_channel = 'HSV_ALL'       # Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
+hog_channel = 'HSV_ALL' # Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32          # Number of histogram bins
 spatial_feat = True     # Spatial features on or off
 hist_feat_RGB = True    # Histogram features on or off on RGB image
-hist_feat_HSV = False   # Histogram features on or off on HSV image
+hist_feat_HSV = True   # Histogram features on or off on HSV image
 hog_feat = True         # HOG features on or off   
 # Threshold for procesing heatmaps
 thresh=10
@@ -244,7 +245,7 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         slide_windows = slide_window(frame_img.shape, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
                             xy_window=xy_window, xy_overlap=(0.5, 0.5))
         # Identify windows that are classified as cars                    
-        hot_windows += search_windows(frame_img, slide_windows, clf, X_scaler, color_space=color_space, 
+        hot_windows += search_windows(frame_img, search_window, slide_windows, clf, X_scaler, color_space=color_space, 
                                 spatial_size=spatial_size, hist_bins=hist_bins, 
                                 orient=orient, pix_per_cell=pix_per_cell, 
                                 cell_per_block=cell_per_block, 
@@ -344,6 +345,9 @@ def process_test_images(sequence=False, verbose=False, threshold=4):
     
 
 def read_data_and_train_classifier():
+    '''
+    reset clf and X_scaler variables, read training data and train the classifier from scratch
+    '''
     global clf
     global X_scaler
     clf = None
@@ -351,6 +355,31 @@ def read_data_and_train_classifier():
     print('reading datasets')
     v_trn, v_tst, nv_trn, nv_tst = read_datasets()
     train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
+
+
+
+def save_to_file(clf_fname, xscaler_fname):
+    '''    
+    Save clf and X_scaler to file
+    clf_fname: filename for clf 
+    xscaler_fname: filename for xscaler
+    '''
+    joblib.dump(clf, clf_fname)
+    joblib.dump(X_scaler, xscaler_fname)
+
+
+
+def load_from_file(clf_fname, xscaler_fname):
+    '''    
+    Save clf and X_scaler to file
+    clf_fname: filename for clf 
+    xscaler_fname: filename for xscaler
+    '''
+    global clf
+    global X_scaler
+    clf = joblib.load(work_path+clf_fname)
+    X_scaler = joblib.load(work_path+xscaler_fname)
+
 
 
 
