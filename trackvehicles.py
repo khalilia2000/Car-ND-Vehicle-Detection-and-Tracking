@@ -14,11 +14,7 @@ from helperfunctions import visualize_search_windows_on_test_images
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
 import time
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
@@ -34,7 +30,7 @@ import os
 num_frames_to_keep = 6  # number of frames to store
 recent_hot_windows = [] # list of hot windows identified on recent frames
 # classifier and training related objects
-svc = None              # linear SVC object
+clf = None              # classifier object
 X_scaler = None         # scaler object for normalizing inputs
 # hyper parameters for feature extraction
 color_space = 'BGR'     # color space of the images
@@ -59,6 +55,18 @@ all_search_windows = [search_window_0,
                       search_window_1, 
                       search_window_2,
                       search_window_3]
+# path to the working repository
+home_computer = False
+if home_computer == True:
+    work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
+else:
+    work_path = 'C:/Users/ali.khalili/Desktop/Car-ND/CarND-P5-Vehicle-Detection-and-Tracking/'
+# path to the final non-vehicle dataset of 64 x 64 images
+non_vehicle_path = work_path + 'non-vehicles-dataset-final/'
+# path to the final vehicle dataset of 64 x 64 images
+vehicle_path = work_path + 'vehicles-dataset-final/'
+# test images
+test_img_path = work_path + 'test_images/'
 
 
 
@@ -80,7 +88,7 @@ def train_classifier(vehicles_trn,
     images pertainnig to each set.
     '''
     # Define global variables to use in this function
-    global svc    
+    global clf    
     global X_scaler
 
     
@@ -171,18 +179,17 @@ def train_classifier(vehicles_trn,
         print('Feature vector length:', len(scaled_X_trn[0]))
 
     t0=time.time()
-    # Use a linear SVC 
-    #svc = LinearSVC()    
-    svc = RandomForestClassifier(n_estimators=20, max_features=100)
-    svc.fit(scaled_X_trn, y_trn)
+    # Use a Random Forest Classifier
+    clf = RandomForestClassifier(n_estimators=20, max_features=100)
+    clf.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
     
     # if verbose, print some details
     if verbose:
-        print(round(t1-t0, 2), 'Seconds to train SVC...')
-        # Check the score of the SVC
-        print('Test Accuracy of SVC = ', round(svc.score(scaled_X_tst, y_tst), 4))
+        print(round(t1-t0, 2), 'Seconds to train classifier...')
+        # Check the score of the classifier
+        print('Test Accuracy of the classifier = ', round(clf.score(scaled_X_tst, y_tst), 4))
 
     
     t_finish = time.time()
@@ -237,7 +244,7 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         slide_windows = slide_window(frame_img.shape, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
                             xy_window=xy_window, xy_overlap=(0.5, 0.5))
         # Identify windows that are classified as cars                    
-        hot_windows += search_windows(frame_img, slide_windows, svc, X_scaler, color_space=color_space, 
+        hot_windows += search_windows(frame_img, slide_windows, clf, X_scaler, color_space=color_space, 
                                 spatial_size=spatial_size, hist_bins=hist_bins, 
                                 orient=orient, pix_per_cell=pix_per_cell, 
                                 cell_per_block=cell_per_block, 
@@ -281,23 +288,6 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         draw_image = cv2.addWeighted(draw_image, 1, scaled_heatmap, 0.3, 0)
     
     return draw_image
-
-
-
-
-# path to the working repository
-home_computer = True
-if home_computer == True:
-    work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
-else:
-    work_path = 'C:/Users/ali.khalili/Desktop/Car-ND/CarND-P5-Vehicle-Detection-and-Tracking/'
-# path to the final non-vehicle dataset of 64 x 64 images
-non_vehicle_path = work_path + 'non-vehicles-dataset-final/'
-# path to the final vehicle dataset of 64 x 64 images
-vehicle_path = work_path + 'vehicles-dataset-final/'
-# test images
-test_img_path = work_path + 'test_images/'
-
 
 
 
@@ -354,9 +344,9 @@ def process_test_images(sequence=False, verbose=False, threshold=4):
     
 
 def read_data_and_train_classifier():
-    global svc
+    global clf
     global X_scaler
-    svc = None
+    clf = None
     X_scaler = None
     print('reading datasets')
     v_trn, v_tst, nv_trn, nv_tst = read_datasets()
@@ -365,15 +355,6 @@ def read_data_and_train_classifier():
 
 
 def main():
-  
-#    global svc
-#    global X_scaler
-#    svc = None
-#    X_scaler = None
-#    print('reading datasets')
-#    v_trn, v_tst, nv_trn, nv_tst = read_datasets()
-#    train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
-#    process_test_images(sequence=True, verbose=True)
     pass
 
 

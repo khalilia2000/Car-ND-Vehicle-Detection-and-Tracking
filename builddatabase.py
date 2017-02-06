@@ -16,7 +16,7 @@ from helperfunctions import slide_window
 
 
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -416,7 +416,7 @@ def add_flipped():
 
 
 
-def prepare_and_augment_datasets(goal_size = 25000):
+def prepare_and_augment_datasets(goal_size = 12500):
     '''
     Copy, extrace and/or save all relevant files to the dataset locations
     Augment the dataset to contain equal number of images
@@ -502,7 +502,7 @@ def clean_data_from_test_images():
         rev_img = cv2.resize(img, (64, 64))
         cv2.imwrite(fname, rev_img)
     
-    generate_additional_data(v_add_path, nv_add_path, target_number=1000, verbose=False)
+    generate_additional_data(v_add_path, nv_add_path, target_number=5000, verbose=False)
     
     # Copy and save images from captured videos (personal)
     copy_files(v_add_path, vehicle_path, ["*.png"], verbose=True, pre_fix=None)
