@@ -28,7 +28,7 @@ import os
 
 # Define global variables
 # frame/image objects
-num_frames_to_keep = 6  # number of frames to store
+num_frames_to_keep = 5  # number of frames to store
 recent_hot_windows = [] # list of hot windows identified on recent frames
 # classifier and training related objects
 clf = None              # classifier object
