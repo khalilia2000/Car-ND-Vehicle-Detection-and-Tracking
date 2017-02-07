@@ -36,16 +36,16 @@ I did use the template provided in the course notes and modified it. You're read
 |:--------------------------------:|:------------------------------------:| 
 | <img src="./output_images/example_v.png" alt="Example of a vehicle in training dataset" height =128 width=128> | <img src="./output_images/example_nv.png" alt="Example of a non-vehicle in training dataset" height =128 width=128> |
 
-I then used function `extract_features()` (lines 159 to 240 of`helperfunctions.py`) to extract features such as spatial bins, color histogram features and HOG features. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines 37 to 47 of `trackvehicles.py`. I randomly plotted the resulting HOG features image using various color spaces and found out that the cars are better visible in the resulting HOG image produced from HSV space. 
+I then used function `extract_features()` (lines 159 to 240 of`helperfunctions.py`) to extract features such as spatial bins, color histogram features and HOG features. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines 37 to 47 of `trackvehicles.py`. I randomly plotted the resulting HOG features image using various color spaces and found out that the cars are better visible in G channel, but the combined information contained in the HSV color space (i.e. all H, S and V channels combined) are more valuable in classifying the vehicle images. 
 
-Here are examples of using the `HSV` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+Here are examples of using the `HSV` and `RGB` color spaces and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
-| Image in HSV color space | HOG feature image from H channel | HOG feature image from S channel | HOG feature image from V channel |
+| Image in HSV color space | HOG feature image - H channel | HOG feature image - S channel | HOG feature image - V channel |
 |:--------------:|:-----------------------------:|:-----------:|:-----------:| 
 | <img src="./output_images/example_v_hsv.png" height =128 width=128> | <img src="./output_images/example_hog_h.png" height =128 width=128> | <img src="./output_images/example_hog_s.png" height =128 width=128> | <img src="./output_images/example_hog_v.png" height =128 width=128> |
 
 
-| Image in RGB color space | HOG feature image from R channel | HOG feature image from G channel | HOG feature image from B channel |
+| Image in RGB color space | HOG feature image - R channel | HOG feature image - G channel | HOG feature image - B channel |
 |:--------------:|:-----------------------------:|:-----------:|:-----------:| 
 | <img src="./output_images/example_v.png" height =128 width=128> | <img src="./output_images/example_hog_r.png" height =128 width=128> | <img src="./output_images/example_hog_g.png" height =128 width=128> | <img src="./output_images/example_hog_b.png" height =128 width=128> |
 
