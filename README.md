@@ -84,7 +84,7 @@ Examples of search windows drawn on example test images are shown below:
 
 | Original Image | 32 x 32 Search Windows | 64 x 64 Search Windows | 96 x 96 Search Windows | 128 x 128 Search Windows |
 |:--------------:|:----------------------:|:----------------------:|:----------------------:|:------------------------:|
-| <img src="./output_images/search_boxes_32.jpg" height =128 width=128> | <img src="./output_images/search_boxes_64.jpg" height =128 width=128> | <img src="./output_images/search_boxes_96.jpg" height =128 width=128> | <img src="./output_images/search_boxes_128.jpg" height =128 width=128> |
+| <img src="./output_images/test1.jpg" height =128 width=128> | <img src="./output_images/search_boxes_32.jpg" height =128 width=128> | <img src="./output_images/search_boxes_64.jpg" height =128 width=128> | <img src="./output_images/search_boxes_96.jpg" height =128 width=128> | <img src="./output_images/search_boxes_128.jpg" height =128 width=128> |
 
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
