@@ -91,9 +91,23 @@ Examples of search windows drawn on example test images are shown below:
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+Function `mark_vehicles_on_frame()` (lines 228 to 291 or `trackvehicles.py`) implements the pipeline that draw bounding boxes on the images. The following steps are performed in this function:  
+1- The function iterates through all_search_windows containing tuple elements, with the first element of the tuple identifying the area of interest, and the second item identifying the size of the search window (lines 240 to 255 of `trackvehicles.py`). For each search_window:  
+  - function `slide_window()` is called to to obtain the list of search windows with 50% overlap. `slide_window()` is defined in lines 244 to 286 of `helperfunctions.py`.  
+  - function `search_windows()` (lines 372 to 424 of `helperfunctions.py`) is then called to assess the classifier on each search window identified in the previous step and determine if the subject search_window is a vehicle or not. This function internally calls `extract_hog_features_once()` (lines 290 to 367 of `helperfunctions.py`) to extract HOG features only once for the region of interest in order to speed up the process (i.e. instead of extracting HOG features for each search window).   
+  
+2- The list of hot windows (i.e. windows that contained car segments) is then appended to a list that stores the hot windows for the past few frames. Information pertaining to the 5 most recent frames are stored in `recent_hot_windows` (i.e. `num_frames_to_keep = 5`). (lines 256 to 259 of `trackvehicles.py`)  
+3- A heatmap object is created, which has the same dimensions as the image that is being processed by adding 1 inside the hot windows for all recent frames that are stored in `recent_hot_windows` (lines 261 to 264 of `trackvehicles.py`).  
+4- A Threshold value is used to screen the false positives and only return non-zero values where the value is above the threshold (line 270 of `trackvehicles.py`.  
+5- function `label()` from `scipy.ndimage.measurements` is then used to label the zones that are connected together in the heatmap (line 273 of `trackvehicles.py`).  
+6- function `draw_labeled_bboxes()` is then called to draw bounding boxes around the zones that are connected together in the heatmap (line 284 of `trackvehicles.py`). Similarly, if requierd, the heatmap in plotted in the bounding boxes (lines 286 to 289 of `trackvehicles.py`).  
 
-![alt text][image4]
+The above pipeline is shown consecutively in the example images below:
+
+| Description    | Image      |
+|:--------------:|:----------:|
+| Original Image | <img src="./output_images/test1.jpg" height =144 width=256> |
+
 ---
 
 ### Video Implementation
