@@ -65,9 +65,27 @@ Function `train_classifier()` (lines 75 to 200 of `trackvehicles.py`) was used t
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+I defined 4 different search areas (lines 50 to 58 of `trackvehicles.py`):
+```
+# search widnows below indicates the areas of interest that should be searched plus the search window size.  
+# The first element is the ((x_min, x_max), (y_min, y_max)) where the coordiantes are relative to the image
+# size, (i.e. between 0 and 1) and the second element is the size of the search widnow:  
+search_window_0 = (np.array([[0.0,1.0], [0.5, 1.0]]), 32)
+search_window_1 = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
+search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
+search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
+all_search_windows = [search_window_0,
+                      search_window_1, 
+                      search_window_2,
+                      search_window_3]
+```
+As per the above, the search window sizes vary from 32 to 128 pixels (i.e. the second element of the tuple). and the search areas are the full extent in x direction, and the lower half of the image in the y direction. I initially started by applying a perspective search (i.e. smaller area of interest for smaller window sizes, and bigger area of interest for larger window sizes), but it did not result in good performance. I also tried adding search windows of size 256, and it resulted in a lot of false positives.  
+Examples of search windows drawn on example test images are shown below:
 
-![alt text][image3]
+| Original Image | 32 x 32 Search Windows | 64 x 64 Search Windows | 96 x 96 Search Windows | 128 x 128 Search Windows |
+|:--------------:|:----------------------:|:----------------------:|:----------------------:|:------------------------:|
+| <img src="./output_images/search_boxes_32.jpg" height =128 width=128> | <img src="./output_images/search_boxes_64.jpg" height =128 width=128> | <img src="./output_images/search_boxes_96.jpg" height =128 width=128> | <img src="./output_images/search_boxes_128.jpg" height =128 width=128> |
+
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
 
