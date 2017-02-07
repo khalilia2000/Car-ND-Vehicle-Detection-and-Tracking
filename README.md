@@ -106,12 +106,12 @@ The above pipeline is shown consecutively in the example images below:
 
 | Description    | Image      |
 |:--------------:|:----------:|
-| Original Image | <img src="./output_images/pipeline_0.jpg" height =144 width=256> |
-| Image with hot windows drawn (Step 1 above) | <img src="./output_images/pipeline_1.jpg" height =144 width=256> |
-| Image with heatmap drawn (Step 3 above) | <img src="./output_images/pipeline_2.jpg" height =144 width=256> |
-| Using thresholding to eliminate false positives (Step 4 above) | <img src="./output_images/pipeline_3.jpg" height =144 width=256> |
-| Identify car blobs using label function (Step 5) | <img src="./output_images/pipeline_4.jpg" height =144 width=256> |
-| Processed image with bounding boxes drawn on it (Step 6) | <img src="./output_images/pipeline_5.jpg" height =144 width=256> |
+| Original Image | <img src="./output_images/pipeline_0.jpg" height =288 width=512> |
+| Image with hot windows drawn (Step 1 above) | <img src="./output_images/pipeline_1.jpg" height =288 width=512> |
+| Image with heatmap drawn (Step 3 above) | <img src="./output_images/pipeline_2.jpg" height =288 width=512> |
+| Using thresholding to eliminate false positives (Step 4 above) | <img src="./output_images/pipeline_3.jpg" height =288 width=512> |
+| Identify car blobs using label function (Step 5) | <img src="./output_images/pipeline_4.jpg" height =288 width=512> |
+| Processed image with bounding boxes drawn on it (Step 6) | <img src="./output_images/pipeline_5.jpg" height =288 width=512> |
 
 ---
 
