@@ -30,7 +30,7 @@ I did use the template provided in the course notes and modified it. You're read
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-`get_hog_features()` function was definned (lines 99 to 124 in `helperfunctions.py`) to extract the hog_features from an image. I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (lines 40 to 95 of `helperfunctions.py`).  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
+`get_hog_features()` function was definned (lines 99 to 124 in `helperfunctions.py`) to extract the hog_features from an image. I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (lines 40 to 95 of `helperfunctions.py`). I split the dataset into training and test datasets such that all test datasets form a consequtive block to avoid cross-contamination between datasets resulting from close images that are in the datasets. In forming the datasets, I also extracted some additional iamges from the AUTTI dataset and added them to both datasets. I also added the horizontally flipped images to completment the datasets. Total vehicle and non-vehicle images that I used were 30,000, and 30,000 respectively.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 | Example Training Image - Vehicle | Example Training Image - Non-Vehicle |
 |:--------------------------------:|:------------------------------------:| 
@@ -51,11 +51,11 @@ Here are examples of using the `HSV` and `RGB` color spaces and HOG parameters o
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
-I tried various combinations of parameters and...
+I used two different classifier types: Linear SVM Classifier, and Random Forest Classifier. For each of these classifier types, I almost did a grid search to identify the optimium hyper parameters that resulted in the best accuracy on the test dataset. The best combination consisted of using Random Forest Classifier with `orient=8`, `pix_per_cell=8`, `cell_per_block=2`, `hog_channel='HSV_ALL'`, `spatial_size=(16,16)`, `hist_bins=32`, `spatial_feat=True`, `hist_feat_RGB=True`, `hist_feat_HSV=True`, `hog_feat=True`. The accuracy on the test dataset was approximately 91%.
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using...
+Function `train_classifier()` (lines 75 to 200 of `trackvehicles.py`) was used to train a classifier. As explained before, both Linear SVM and Random Forest classifiers were tried and it was decided that Random Forest Classifier was performing better. The classifier is defined and trained in lines 184 and 185 of `trackvehicles.py` respectively. The classifier uses the extracted features from train and test datasets obtained using `extract_features()` method (lines 104 to 152 of `trackvehicles.py`).
 
 ###Sliding Window Search
 
