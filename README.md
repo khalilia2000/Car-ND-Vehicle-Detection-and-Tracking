@@ -82,9 +82,11 @@ all_search_windows = [search_window_0,
 As per the above, the search window sizes vary from 32 to 128 pixels (i.e. the second element of the tuple). and the search areas are the full extent in x direction, and the lower half of the image in the y direction. I initially started by applying a perspective search (i.e. smaller area of interest for smaller window sizes, and bigger area of interest for larger window sizes), but it did not result in good performance. I also tried adding search windows of size 256, and it resulted in a lot of false positives.  
 Examples of search windows drawn on example test images are shown below:
 
-| Original Image | 32 x 32 Search Windows | 64 x 64 Search Windows | 96 x 96 Search Windows | 128 x 128 Search Windows |
-|:--------------:|:----------------------:|:----------------------:|:----------------------:|:------------------------:|
-| <img src="./output_images/test1.jpg" height =128 width=128> | <img src="./output_images/search_boxes_32.jpg" height =128 width=128> | <img src="./output_images/search_boxes_64.jpg" height =128 width=128> | <img src="./output_images/search_boxes_96.jpg" height =128 width=128> | <img src="./output_images/search_boxes_128.jpg" height =128 width=128> |
+| Description    | Image      | Description    | Image      |
+|:--------------:|:----------:|:--------------:|:----------:|
+| Original Image | <img src="./output_images/test1.jpg" height =144 width=256> | 32 x 32 Search Windows | <img src="./output_images/search_boxes_32.jpg" height =144 width=256> |
+| 64 x 64 Search Windows | <img src="./output_images/search_boxes_64.jpg" height =144 width=256> | 96 x 96 Search Windows | <img src="./output_images/search_boxes_96.jpg" height =144 width=256> |
+| 128 x 128 Search Windows | <img src="./output_images/search_boxes_128.jpg" height =144 width=256> | | |
 
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
