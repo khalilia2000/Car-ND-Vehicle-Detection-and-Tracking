@@ -23,7 +23,9 @@ import cv2
 from moviepy.editor import VideoFileClip
 import glob
 import os
-
+from scipy import ndimage as ndi
+from skimage.morphology import watershed
+from skimage.feature import peak_local_max
 
 
 # Define global variables
@@ -54,8 +56,7 @@ search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
 search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
 all_search_windows = [search_window_0,
                       search_window_1, 
-                      search_window_2,
-                      search_window_3]
+                      search_window_2]
 # path to the working repository
 home_computer = False
 if home_computer == True:
@@ -201,13 +202,60 @@ def train_classifier(vehicles_trn,
     
     
 
+def draw_bboxes_using_watershed(img, heatmap, color=(0,0,255), thick=2, verbose=False):
+    '''
+    Draw bounding boxes around the cars identified in labels heatmap
+    img: original image
+    heatmap: the heatmap that is created from on_windows
+    this algorithm uses watershed algorithm to put bounding boxes around cars that are close together separately
+    '''
+    # Create masked image from the thresholded heatmap - make image single channel
+    masked_img = np.copy(heatmap[:,:,0])
+    masked_img[masked_img>0]=1
+    # Calculate distance from the background
+    distance = ndi.distance_transform_edt(masked_img)
+    # Calculate local maxima and convert into dtype=int
+    local_maxima = peak_local_max(distance, indices=False, footprint=np.ones((96,96)))
+    local_maxima = local_maxima.astype(int)
+    # Use label function to identiry and label various local maxima that is found
+    markers = label(local_maxima)[0]
+    # Use watershed algorithm to identify various portions of the image and assume each is a car
+    labels = watershed(-distance, markers, mask=masked_img)
+    # Identify the number of cars found
+    n_cars = labels.max()
+    # if verbose, print some details    
+    if verbose:
+        print(n_cars, ' cars found')
+        cv2.imwrite(test_img_path+'pipeline_4.jpg', labels*100)
+    # Iterate through all detected cars
+    for car_number in range(1, n_cars+1):
+        # Find pixels with each car_number label value
+        nonzero = (labels == car_number).nonzero()
+        # Identify x and y values of those pixels
+        nonzeroy = np.array(nonzero[0])
+        nonzerox = np.array(nonzero[1])
+        # Define a bounding box based on min/max x and y
+        bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+        # Draw the box on the image
+        cv2.rectangle(img, bbox[0], bbox[1], color, thick)
+    # Return the image
+    return img
 
-def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
+
+
+def draw_bboxes_using_label(img, heatmap, color=(0,0,255), thick=2, verbose=False):
     '''
     Draw bounding boxes around the cars identified in labels heatmap
     img: original image
     labels: result of the label fundction
     '''
+    # Create labels from the heatmap
+    labels = label(heatmap)
+    # if verbose, print some details    
+    if verbose:
+        print(labels[1], ' cars found')
+        print('maximum intensity of heatmap = ', heatmap.max())
+        cv2.imwrite(test_img_path+'pipeline_4.jpg', labels[0]*100)
     # Iterate through all detected cars
     for car_number in range(1, labels[1]+1):
         # Find pixels with each car_number label value
@@ -225,7 +273,7 @@ def draw_labeled_bboxes(img, labels, color=(0,0,255), thick=2):
 
 
 
-def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True):
+def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=True):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
@@ -253,6 +301,13 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
                                 hist_feat_RGB=hist_feat_RGB, 
                                 hist_feat_HSV=hist_feat_HSV, 
                                 hog_feat=hog_feat)
+    # if verbose, save some photos    
+    if verbose:
+        pipeline_1 = np.copy(frame_img)
+        for window in hot_windows:
+            cv2.rectangle(pipeline_1, window[0], window[1], color=(0,0,255), thickness=2)
+        cv2.imwrite(test_img_path+'pipeline_1.jpg', pipeline_1)
+        
     # Append the results to the global list
     recent_hot_windows.append(hot_windows)
     if len(recent_hot_windows) > num_frames_to_keep:
@@ -262,31 +317,35 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
     for frame_hot_windows in recent_hot_windows:
         for window in frame_hot_windows:
             heatmap[window[0][1]:window[1][1], window[0][0]:window[1][0]] += 1
-    # if verbose, plot the heatmap    
+    # if verbose, plot the heatmap and save to file   
     if verbose:
-        plt.imshow(heatmap)
+        scaled_heatmap = heatmap*100
+        scaled_heatmap[scaled_heatmap>255] = 255
+        scaled_heatmap[:,:,:2] = 0
+        cv2.imwrite(test_img_path+'pipeline_2.jpg', cv2.addWeighted(np.copy(frame_img), 1, scaled_heatmap, 0.5, 0))
     
     # Zero out pixels below the threshold
-    heatmap[heatmap <= thresh] = 0
-    
-    # Find bounding boxes around cars
-    labels = label(heatmap)
-    # if verbose, print some details    
+    heatmap[heatmap <= thresh] = 0    
+    # if verbose, save some photos and print some details   
     if verbose:
-        print(labels[1], ' cars found')
         print('maximum intensity of heatmap = ', heatmap.max())
-        plt.imshow(labels[0], cmap='gray')
-
-
+        scaled_heatmap = heatmap*100
+        scaled_heatmap[scaled_heatmap>255] = 255
+        scaled_heatmap[:,:,:2] = 0
+        cv2.imwrite(test_img_path+'pipeline_3.jpg', cv2.addWeighted(np.copy(frame_img), 1, scaled_heatmap, 0.5, 0))
+    
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
     if plot_box:
-        draw_image = draw_labeled_bboxes(draw_image, labels, color=(255, 0, 0), thick=1)  
+        if watershed:
+            draw_image = draw_bboxes_using_watershed(draw_image, heatmap, color=(255, 0, 0), thick=1, verbose=verbose) 
+        else:
+            draw_image = draw_bboxes_using_label(draw_image, heatmap, color=(255, 0, 0), thick=1, verbose=verbose) 
     if plot_heat_map:
         scaled_heatmap = heatmap*100
         scaled_heatmap[scaled_heatmap>255] = 255
         scaled_heatmap[:,:,:2] = 0
-        draw_image = cv2.addWeighted(draw_image, 1, scaled_heatmap, 0.3, 0)
+        draw_image = cv2.addWeighted(draw_image, 1, scaled_heatmap, 0.5, 0)
     
     return draw_image
 
@@ -308,7 +367,7 @@ def process_movie(file_name, threshold=10, c_space='RGB'):
 
 
 
-def process_test_images(sequence=False, verbose=False, threshold=4):
+def process_test_images(sequence=False, verbose=False, threshold=4, watershed=False):
     '''
     Read test images, process them, mark the vehicles on them and save them back to the folder
     '''
@@ -332,7 +391,7 @@ def process_test_images(sequence=False, verbose=False, threshold=4):
             if not sequence:
                 recent_hot_windows = []
             # process image
-            img_rev = mark_vehicles_on_frame(img, verbose=verbose)
+            img_rev = mark_vehicles_on_frame(img, verbose=verbose, watershed=watershed)
             # Recorde time and print details if verbose = True
             if verbose:
                 t_finish = time.time()
