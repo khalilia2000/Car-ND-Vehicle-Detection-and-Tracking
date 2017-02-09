@@ -37,7 +37,7 @@ def base_name(x_str):
     return (len(res_str), res_str)
 
 
-def read_datasets():
+def read_datasets(limit_trn=-1, random=True):
     '''
     Read in cars and non-cars datasets
     '''
@@ -68,31 +68,52 @@ def read_datasets():
     test_size = 0.2
     vehicle_test_size = round(test_size*len(vehicles))
     non_vehicle_test_size = round(test_size*len(non_vehicles))
-    vehicle_index = round(np.random.uniform(len(vehicles)-vehicle_test_size))
-    non_vehicle_index = round(np.random.uniform(len(non_vehicles)-non_vehicle_test_size))
+    # Choose the samples randomly if required
+    if random:
+        # for randome selection of the test data 
+        vehicle_index = round(np.random.uniform(len(vehicles)-vehicle_test_size))
+        non_vehicle_index = round(np.random.uniform(len(non_vehicles)-non_vehicle_test_size))
+    else:
+        # for non-random selection of the test data 
+        vehicle_index = 0
+        non_vehicle_index = 0
     # Copy data into train and test datasets
     # vehicles - training set
     v_trn_imgs = vehicles[0:vehicle_index] + \
                     vehicles[vehicle_index+vehicle_test_size:]
     v_trn_fnames = file_names_vehicles[0:vehicle_index] + \
                     file_names_vehicles[vehicle_index+vehicle_test_size:]
-    v_trn = (v_trn_imgs, v_trn_fnames)
+    if limit_trn==-1:    
+        v_trn = (v_trn_imgs, v_trn_fnames)
+    else:
+        v_trn = (v_trn_imgs[0:limit_trn], v_trn_fnames[0:limit_trn])
     # vehicles - test set
     v_tst_imgs = vehicles[vehicle_index:vehicle_index+vehicle_test_size]
     v_tst_fnames = file_names_vehicles[vehicle_index:vehicle_index+vehicle_test_size]
-    v_tst = (v_tst_imgs, v_tst_fnames)
+    if limit_trn==-1:
+        v_tst = (v_tst_imgs, v_tst_fnames)
+    else:
+        v_tst = (v_tst_imgs[0:round(limit_trn*test_size)], v_tst_fnames[0:round(limit_trn*test_size)])
     # non-vehicles - training set
     nv_trn_imgs = non_vehicles[0:non_vehicle_index] + \
                     non_vehicles[non_vehicle_index+non_vehicle_test_size:]
     nv_trn_fnames = file_names_non_vehicles[0:non_vehicle_index] + \
                     file_names_non_vehicles[non_vehicle_index+non_vehicle_test_size:]
-    nv_trn = (nv_trn_imgs, nv_trn_fnames)
+    if limit_trn==-1:
+        nv_trn = (nv_trn_imgs, nv_trn_fnames)
+    else:
+        nv_trn = (nv_trn_imgs[0:limit_trn], nv_trn_fnames[0:limit_trn])
     # non-vehicles - test set
     nv_tst_imgs = non_vehicles[non_vehicle_index:non_vehicle_index+non_vehicle_test_size]
     nv_tst_fnames = file_names_non_vehicles[non_vehicle_index:non_vehicle_index+non_vehicle_test_size]
-    nv_tst = (nv_tst_imgs, nv_tst_fnames)    
+    if limit_trn==-1:
+        nv_tst = (nv_tst_imgs, nv_tst_fnames)    
+    else:
+        nv_tst = (nv_tst_imgs[0:round(limit_trn*test_size)], nv_tst_fnames[0:round(limit_trn*test_size)])    
+    
     
     return v_trn, v_tst, nv_trn, nv_tst
+    
     
 
 

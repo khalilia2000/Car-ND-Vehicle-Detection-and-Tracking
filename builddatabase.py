@@ -484,7 +484,7 @@ def extract_data_from_test_images(num_extracts_per_photo=30):
     
     
     
-def clean_data_from_test_images():
+def clean_data_from_added_images():
     '''
     additional training data from a captured video of the road
     '''
@@ -502,7 +502,7 @@ def clean_data_from_test_images():
         rev_img = cv2.resize(img, (64, 64))
         cv2.imwrite(fname, rev_img)
     
-    generate_additional_data(v_add_path, nv_add_path, target_number=2000, verbose=False)
+    generate_additional_data(v_add_path, nv_add_path, target_number=7500, verbose=False)
     
     # Copy and save images from captured videos (personal)
     copy_files(v_add_path, vehicle_path, ["*.png"], verbose=True, pre_fix=None)

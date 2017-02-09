@@ -43,9 +43,9 @@ cell_per_block = 2      # HOG cells per block
 hog_channel = 'HSV_ALL' # Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32          # Number of histogram bins
-spatial_feat = True     # Spatial features on or off
-hist_feat_RGB = True    # Histogram features on or off on RGB image
-hist_feat_HSV = True   # Histogram features on or off on HSV image
+spatial_feat = False     # Spatial features on or off
+hist_feat_RGB = False    # Histogram features on or off on RGB image
+hist_feat_HSV = False   # Histogram features on or off on HSV image
 hog_feat = True         # HOG features on or off   
 # Threshold for procesing heatmaps
 thresh=10
@@ -56,7 +56,8 @@ search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
 search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
 all_search_windows = [search_window_0,
                       search_window_1, 
-                      search_window_2]
+                      search_window_2,
+                      search_window_3]
 # path to the working repository
 home_computer = False
 if home_computer == True:
@@ -182,7 +183,7 @@ def train_classifier(vehicles_trn,
 
     t0=time.time()
     # Use a Random Forest Classifier
-    clf = RandomForestClassifier(n_estimators=20, max_features=100)
+    clf = RandomForestClassifier(n_estimators=20, max_features=50)
     clf.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
@@ -273,7 +274,7 @@ def draw_bboxes_using_label(img, heatmap, color=(0,0,255), thick=2, verbose=Fals
 
 
 
-def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=True):
+def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=False):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
@@ -337,10 +338,13 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
     if plot_box:
+        draw_color = [0,0,0]
+        draw_color[color_space.index('B')] = 255
+        draw_color = tuple(draw_color)
         if watershed:
-            draw_image = draw_bboxes_using_watershed(draw_image, heatmap, color=(255, 0, 0), thick=1, verbose=verbose) 
+            draw_image = draw_bboxes_using_watershed(draw_image, heatmap, color=draw_color, thick=1, verbose=verbose) 
         else:
-            draw_image = draw_bboxes_using_label(draw_image, heatmap, color=(255, 0, 0), thick=1, verbose=verbose) 
+            draw_image = draw_bboxes_using_label(draw_image, heatmap, color=draw_color, thick=1, verbose=verbose) 
     if plot_heat_map:
         scaled_heatmap = heatmap*100
         scaled_heatmap[scaled_heatmap>255] = 255
@@ -351,7 +355,7 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
 
 
 
-def process_movie(file_name, threshold=10, c_space='RGB'):
+def process_movie(file_name, pre_fix='AK_', threshold=10, c_space='RGB'):
     '''
     Load movie and replace frames with processed images and then save movie back to file
     '''
@@ -362,7 +366,7 @@ def process_movie(file_name, threshold=10, c_space='RGB'):
     
     movie_clip = VideoFileClip(work_path+file_name)
     processed_clip = movie_clip.fl_image(mark_vehicles_on_frame)
-    processed_clip.write_videofile(work_path+'AK_'+file_name, audio=False, verbose=True, threads=6)
+    processed_clip.write_videofile(work_path+pre_fix+file_name, audio=False, verbose=True, threads=6)
 
 
 
@@ -403,7 +407,7 @@ def process_test_images(sequence=False, verbose=False, threshold=4, watershed=Fa
 
     
 
-def read_data_and_train_classifier():
+def read_data_and_train_classifier(limit_trn=-1, random=True):
     '''
     reset clf and X_scaler variables, read training data and train the classifier from scratch
     '''
@@ -412,8 +416,9 @@ def read_data_and_train_classifier():
     clf = None
     X_scaler = None
     print('reading datasets')
-    v_trn, v_tst, nv_trn, nv_tst = read_datasets()
+    v_trn, v_tst, nv_trn, nv_tst = read_datasets(limit_trn=limit_trn, random=random)
     train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
+    return v_trn, v_tst, nv_trn, nv_tst
 
 
 
