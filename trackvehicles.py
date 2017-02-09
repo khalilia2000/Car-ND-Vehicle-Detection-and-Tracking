@@ -11,6 +11,7 @@ from helperfunctions import slide_window
 from helperfunctions import search_windows
 from helperfunctions import draw_boxes
 from helperfunctions import visualize_search_windows_on_test_images
+from helperfunctions import get_hog_features
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -26,6 +27,7 @@ import os
 from scipy import ndimage as ndi
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
+from matplotlib import gridspec
 
 
 # Define global variables
@@ -183,7 +185,7 @@ def train_classifier(vehicles_trn,
 
     t0=time.time()
     # Use a Random Forest Classifier
-    clf = RandomForestClassifier(n_estimators=20, max_features=50)
+    clf = RandomForestClassifier(n_estimators=20, max_features=75)
     clf.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
@@ -445,6 +447,55 @@ def load_from_file(clf_fname, xscaler_fname):
     X_scaler = joblib.load(work_path+xscaler_fname)
 
 
+
+def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV']):
+    '''
+    plots random hog features images from the dataset that is passed on to this function.
+    data_tupe: 2-tuple with first element containing the images, and 2nd element containnig the filenames.
+    num_images: number of images to choose from the dataset
+    cs_list: list of color spaces
+    '''
+    # creating the grid space
+    hspace = 0.2    # distance between images vertically
+    wspace = 0.01   # distance between images horizontally
+    n_rows = num_images
+    n_cols = len(cs_list)*3+1
+    g_fig = gridspec.GridSpec(n_rows,n_cols) 
+    g_fig.update(wspace=wspace, hspace=hspace)
+    
+    # setting up the figure
+    size_factor = 4.5
+    aspect_ratio = data_tuple[0][0].shape[1]/data_tuple[0][0].shape[0]
+    fig_w_size = n_cols*size_factor*aspect_ratio+(n_cols-1)*wspace
+    fig_h_size = n_rows*size_factor+(n_rows-1)*hspace
+    plt.figure(figsize=(fig_w_size,fig_h_size))
+        
+    ax_list = []
+    counter = 0
+    indices = np.random.choice(len(data_tuple[0]), num_images)
+    for idx, ch_ind in enumerate(indices):
+        img = data_tuple[0][ch_ind]
+        fname = data_tuple[1][ch_ind]
+        ax_list.append(plt.subplot(g_fig[counter]))
+        ax_list[-1].imshow(img)
+        ax_list[-1].axis('off')
+        ax_list[-1].set_title(os.path.basename(fname))
+        counter+=1
+        for cs in cs_list:
+            if cs != color_space:
+                color_space_change_code = eval('cv2.COLOR_'+color_space+'2'+cs)
+                rev_img = cv2.cvtColor(img, color_space_change_code)
+            else:
+                rev_img = np.copy(img)
+            for ch in range(rev_img.shape[2]):
+                feat, hog_img = get_hog_features(rev_img[:,:,ch], orient, pix_per_cell, 
+                                                 cell_per_block, vis=True, feature_vec=True)
+                ax_list.append(plt.subplot(g_fig[counter]))    
+                ax_list[-1].imshow(hog_img, cmap='gray')
+                ax_list[-1].set_title('color_space='+cs+' - CH='+str(ch))
+                ax_list[-1].axis('off')
+                counter+=1
+    plt.savefig(test_img_path+'hog_feat_plot.png')
 
 
 def main():
