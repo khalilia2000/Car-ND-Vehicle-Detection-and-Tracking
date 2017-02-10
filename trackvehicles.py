@@ -16,6 +16,7 @@ from helperfunctions import get_hog_features
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
 from sklearn.externals import joblib
 import time
 from scipy.ndimage.measurements import label
@@ -28,6 +29,7 @@ from scipy import ndimage as ndi
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from matplotlib import gridspec
+from sklearn import tree
 
 
 # Define global variables
@@ -61,7 +63,7 @@ all_search_windows = [search_window_0,
                       search_window_2,
                       search_window_3]
 # path to the working repository
-home_computer = False
+home_computer = True
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -185,7 +187,9 @@ def train_classifier(vehicles_trn,
 
     t0=time.time()
     # Use a Random Forest Classifier
-    clf = RandomForestClassifier(n_estimators=20, max_features=75)
+    #clf = RandomForestClassifier(n_estimators=5, max_features=50, 
+    #                             max_depth=3, min_samples_split=100, verbose=0)
+    clf = LinearSVC()    
     clf.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
@@ -448,7 +452,7 @@ def load_from_file(clf_fname, xscaler_fname):
 
 
 
-def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV']):
+def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV','Gray']):
     '''
     plots random hog features images from the dataset that is passed on to this function.
     data_tupe: 2-tuple with first element containing the images, and 2nd element containnig the filenames.
@@ -496,6 +500,14 @@ def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV'
                 ax_list[-1].axis('off')
                 counter+=1
     plt.savefig(test_img_path+'hog_feat_plot.png')
+
+
+def extract_g():
+    i_tree = 0
+    for tree_in_forest in clf.estimators_:
+        with open('tree_' + str(i_tree) + '.dot', 'w') as my_file:
+            my_file = tree.export_graphviz(tree_in_forest, out_file = my_file)
+        i_tree = i_tree + 1
 
 
 def main():

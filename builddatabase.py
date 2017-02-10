@@ -16,7 +16,7 @@ from helperfunctions import slide_window
 
 
 # path to the working repository
-home_computer = False
+home_computer = True
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -255,10 +255,6 @@ def count_images_in_dataset(verbose=True):
     Count the number of images in the datasets
     '''
     
-    # Verbose mode
-    if verbose:
-        print('Extracting and saving images from the Crowdai dataset')    
-    
     # consider all files in the folder to be images in the dataset.
     file_format = '*.*'
     
@@ -484,7 +480,7 @@ def extract_data_from_test_images(num_extracts_per_photo=30):
     
     
     
-def clean_data_from_added_images():
+def generate_and_copy_additional_images(num_to_add=3000):
     '''
     additional training data from a captured video of the road
     '''
@@ -502,7 +498,7 @@ def clean_data_from_added_images():
         rev_img = cv2.resize(img, (64, 64))
         cv2.imwrite(fname, rev_img)
     
-    generate_additional_data(v_add_path, nv_add_path, target_number=7500, verbose=False)
+    generate_additional_data(v_add_path, nv_add_path, target_number=num_to_add, verbose=False)
     
     # Copy and save images from captured videos (personal)
     copy_files(v_add_path, vehicle_path, ["*.png"], verbose=True, pre_fix=None)
