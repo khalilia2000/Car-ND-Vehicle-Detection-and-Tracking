@@ -14,6 +14,7 @@ from helperfunctions import visualize_search_windows_on_test_images
 from helperfunctions import get_hog_features
 
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import LinearSVC
@@ -63,7 +64,7 @@ all_search_windows = [search_window_0,
                       search_window_2,
                       search_window_3]
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -77,12 +78,90 @@ test_img_path = work_path + 'test_images/'
 
 
 
+def extract_features_from_datasets(vehicles_trn, vehicles_tst, non_vehicles_trn, non_vehicles_tst, verbose=False):
+    '''
+    Extract features from training and test datasets pertaining to beoth vehicles and non-vehicles
+    verbose: if True, pring additional details during the operation
+    '''  
+    
+    # Track time    
+    t_start = time.time()  
+    
+    # if verbose, print some details
+    if verbose:
+        print('Extracting features and stacking them together...')
+    # Extract all features
+    
+    t0=time.time()
+    vehicle_features_trn = extract_features(vehicles_trn, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)
+    t1=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t1-t0, 2), 'Seconds to extract features from vehicle_features_trn...')
+    
+    
+    vehicle_features_tst = extract_features(vehicles_tst, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)
+    t2=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t2-t1, 2), 'Seconds to extract features from vehicle_features_tst...')
+        
+        
+    non_vehicle_features_trn = extract_features(non_vehicles_trn, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)    
+    t3=time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t3-t2, 2), 'Seconds to extract features from non_vehicle_features_trn...')
+        
+        
+    non_vehicle_features_tst = extract_features(non_vehicles_tst, color_space=color_space, 
+                        spatial_size=spatial_size, hist_bins=hist_bins, 
+                        orient=orient, pix_per_cell=pix_per_cell, 
+                        cell_per_block=cell_per_block, 
+                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
+                        hist_feat_RGB=hist_feat_RGB, 
+                        hist_feat_HSV=hist_feat_HSV, 
+                        hog_feat=hog_feat)    
+    
+    t4=time.time()
+    t_finish = time.time()
+    # if verbose, print some details
+    if verbose:
+        print(round(t4-t3, 2), 'Seconds to extract features from non_vehicle_features_tst...')
+        print(round(t_finish-t_start, 2), 'Seconds to extract all features from all datasets...')
+    
+    return vehicle_features_trn, vehicle_features_tst, non_vehicle_features_trn, non_vehicle_features_tst
+        
+        
 
-def train_classifier(vehicles_trn, 
-                     vehicles_tst, 
-                     non_vehicles_trn,
-                     non_vehicles_tst, 
-                     verbose=False, grid_search=False):
+
+def train_classifier(vehicle_features_trn, 
+                     vehicle_features_tst, 
+                     non_vehicle_features_trn, 
+                     non_vehicle_features_tst, 
+                     verbose=False,
+                     **clf_kwargs):
     '''
     Load images from both vehicles and non-vehicles datasets, 
     Extract features from all images,
@@ -97,77 +176,16 @@ def train_classifier(vehicles_trn,
     # Define global variables to use in this function
     global clf    
     global X_scaler
-
-    
-    # Track time    
-    t_start = time.time()    
-    
-    # if verbose, print some details
-    if verbose:
-        print('Extracting features and stacking them together...')
-    # Extract all features
-    t0=time.time()
-    vehicle_features_trn = extract_features(vehicles_trn, color_space=color_space, 
-                        spatial_size=spatial_size, hist_bins=hist_bins, 
-                        orient=orient, pix_per_cell=pix_per_cell, 
-                        cell_per_block=cell_per_block, 
-                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
-                        hog_feat=hog_feat)
+    clf = None
+    X_scaler = None
     
     
-    t1=time.time()
-    # if verbose, print some details
-    if verbose:
-        print(round(t1-t0, 2), 'Seconds to extract features from vehicle_features_trn...')
-    non_vehicle_features_trn = extract_features(non_vehicles_trn, color_space=color_space, 
-                        spatial_size=spatial_size, hist_bins=hist_bins, 
-                        orient=orient, pix_per_cell=pix_per_cell, 
-                        cell_per_block=cell_per_block, 
-                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
-                        hog_feat=hog_feat)    
-    
-
-    t2=time.time()
-    # if verbose, print some details
-    if verbose:
-        print(round(t2-t1, 2), 'Seconds to extract features from non_vehicle_features_trn...')
-    vehicle_features_tst = extract_features(vehicles_tst, color_space=color_space, 
-                        spatial_size=spatial_size, hist_bins=hist_bins, 
-                        orient=orient, pix_per_cell=pix_per_cell, 
-                        cell_per_block=cell_per_block, 
-                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
-                        hog_feat=hog_feat)
-    
-    t3=time.time()
-    # if verbose, print some details
-    if verbose:
-        print(round(t3-t2, 2), 'Seconds to extract features from vehicle_features_tst...')
-    non_vehicle_features_tst = extract_features(non_vehicles_tst, color_space=color_space, 
-                        spatial_size=spatial_size, hist_bins=hist_bins, 
-                        orient=orient, pix_per_cell=pix_per_cell, 
-                        cell_per_block=cell_per_block, 
-                        hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
-                        hog_feat=hog_feat)    
-    
-    t4=time.time()
-    # if verbose, print some details
-    if verbose:
-        print(round(t4-t3, 2), 'Seconds to extract features from vehicle_features_tst...')
     # Stack both datasets
     X_trn = np.vstack((vehicle_features_trn, non_vehicle_features_trn)).astype(np.float64)                        
     X_tst = np.vstack((vehicle_features_tst, non_vehicle_features_tst)).astype(np.float64)                        
-    
     # if verbose, print some details
     if verbose:
-        print('Scaling features, creating labels, and splitting data into train and test datasets...')
+        print('Scaling features, and creating labels...')
     # Fit a per-column scaler
     X_scaler = StandardScaler().fit(X_trn)
     # Apply the scaler to X_trn and X_tst
@@ -189,7 +207,7 @@ def train_classifier(vehicles_trn,
     # Use a Random Forest Classifier
     #clf = RandomForestClassifier(n_estimators=5, max_features=50, 
     #                             max_depth=3, min_samples_split=100, verbose=0)
-    clf = LinearSVC()    
+    clf = LinearSVC(**clf_kwargs)    
     clf.fit(scaled_X_trn, y_trn)
 
     t1 = time.time()
@@ -200,12 +218,6 @@ def train_classifier(vehicles_trn,
         # Check the score of the classifier
         print('Test Accuracy of the classifier = ', round(clf.score(scaled_X_tst, y_tst), 4))
 
-    
-    t_finish = time.time()
-    
-    # if verbose, print some details    
-    if verbose:
-        print('Total time: ', round(t_finish-t_start, 2), 'Seconds')
     
     
 
@@ -280,7 +292,7 @@ def draw_bboxes_using_label(img, heatmap, color=(0,0,255), thick=2, verbose=Fals
 
 
 
-def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=False):
+def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=False, batch_hog=True):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
@@ -300,7 +312,8 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         slide_windows = slide_window(frame_img.shape, x_start_stop=x_start_stop, y_start_stop=y_start_stop, 
                             xy_window=xy_window, xy_overlap=(0.5, 0.5))
         # Identify windows that are classified as cars                    
-        hot_windows += search_windows(frame_img, search_window, slide_windows, clf, X_scaler, color_space=color_space, 
+        hot_windows += search_windows(frame_img, search_window, slide_windows, clf, X_scaler, 
+                                batch_hog=batch_hog, color_space=color_space, 
                                 spatial_size=spatial_size, hist_bins=hist_bins, 
                                 orient=orient, pix_per_cell=pix_per_cell, 
                                 cell_per_block=cell_per_block, 
@@ -377,7 +390,7 @@ def process_movie(file_name, pre_fix='AK_', threshold=10, c_space='RGB'):
 
 
 
-def process_test_images(sequence=False, verbose=False, threshold=4, watershed=False):
+def process_test_images(sequence=False, verbose=False, threshold=4, watershed=False, batch_hog=True):
     '''
     Read test images, process them, mark the vehicles on them and save them back to the folder
     '''
@@ -401,7 +414,7 @@ def process_test_images(sequence=False, verbose=False, threshold=4, watershed=Fa
             if not sequence:
                 recent_hot_windows = []
             # process image
-            img_rev = mark_vehicles_on_frame(img, verbose=verbose, watershed=watershed)
+            img_rev = mark_vehicles_on_frame(img, verbose=verbose, watershed=watershed, batch_hog=batch_hog)
             # Recorde time and print details if verbose = True
             if verbose:
                 t_finish = time.time()
@@ -413,18 +426,31 @@ def process_test_images(sequence=False, verbose=False, threshold=4, watershed=Fa
 
     
 
-def read_data_and_train_classifier(limit_trn=-1, random=True):
+def read_data_and_train_classifier(limit_trn=-1, random=True, verbose=True, **clf_kwargs):
     '''
     reset clf and X_scaler variables, read training data and train the classifier from scratch
     '''
-    global clf
-    global X_scaler
-    clf = None
-    X_scaler = None
+    
     print('reading datasets')
     v_trn, v_tst, nv_trn, nv_tst = read_datasets(limit_trn=limit_trn, random=random)
-    train_classifier(v_trn[0], v_tst[0], nv_trn[0], nv_tst[0], verbose=True)
-    return v_trn, v_tst, nv_trn, nv_tst
+    feat_v_trn, feat_v_tst, feat_nv_trn, feat_nv_tst = extract_features_from_datasets(v_trn[0], v_tst[0], 
+                                                                                      nv_trn[0], nv_tst[0], 
+                                                                                      verbose=verbose)
+    train_classifier(feat_v_trn, feat_v_tst, feat_nv_trn, feat_nv_tst, verbose=verbose, **clf_kwargs)
+    # write fnames to file for furthe exploration
+    df_trn_veh = pd.DataFrame([os.path.basename(item) for item in v_trn[1]], columns=['trn_veh'])
+    df_tst_veh = pd.DataFrame([os.path.basename(item) for item in v_tst[1]], columns=['tst_veh'])
+    df_trn_nvh = pd.DataFrame([os.path.basename(item) for item in nv_trn[1]], columns=['trn_nvh'])
+    df_tst_nvh = pd.DataFrame([os.path.basename(item) for item in nv_tst[1]], columns=['tst_nvh'])
+    df_list = [df_trn_veh, df_tst_veh, df_trn_nvh, df_tst_nvh]
+    df_combined = pd.concat(df_list, ignore_index=True, axis=1)
+    writer = pd.ExcelWriter('file_names.xlsx')
+    df_combined.to_excel(writer,'Sheet1')
+    writer.save()
+    writer.close()
+    
+    
+    return feat_v_trn, feat_v_tst, feat_nv_trn, feat_nv_tst
 
 
 

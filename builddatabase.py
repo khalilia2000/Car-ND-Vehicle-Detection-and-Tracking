@@ -16,7 +16,7 @@ from helperfunctions import slide_window
 
 
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -412,7 +412,7 @@ def add_flipped():
 
 
 
-def prepare_and_augment_datasets(goal_size = 12500):
+def prepare_and_augment_datasets(goal_size = 16250):
     '''
     Copy, extrace and/or save all relevant files to the dataset locations
     Augment the dataset to contain equal number of images
@@ -480,7 +480,7 @@ def extract_data_from_test_images(num_extracts_per_photo=30):
     
     
     
-def generate_and_copy_additional_images(num_to_add=3000):
+def generate_and_copy_additional_images(num_to_add=7500):
     '''
     additional training data from a captured video of the road
     '''

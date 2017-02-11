@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -75,8 +75,8 @@ def read_datasets(limit_trn=-1, random=True):
         non_vehicle_index = round(np.random.uniform(len(non_vehicles)-non_vehicle_test_size))
     else:
         # for non-random selection of the test data 
-        vehicle_index = 0
-        non_vehicle_index = 0
+        vehicle_index = len(vehicles)-vehicle_test_size
+        non_vehicle_index = len(non_vehicles)-non_vehicle_test_size
     # Copy data into train and test datasets
     # vehicles - training set
     v_trn_imgs = vehicles[0:vehicle_index] + \
@@ -232,31 +232,32 @@ def extract_features(imgs, hog_feat_list=[], color_space='BGR', spatial_size=(32
             if len(hog_feat_list)==0:
                 # Initialize hog_features 
                 hog_features=[]
+                resized_img_RGB = cv2.resize(feature_image_RGB, (base_size, base_size))
+                resized_img_HSV = cv2.resize(feature_image_HSV, (base_size, base_size))
                 # Check for the image channel to be passed on to hog_features function
                 if hog_channel == 'RGB_ALL':
-                    for channel in range(feature_image_RGB.shape[2]):
-                        hog_features.append(get_hog_features(feature_image_RGB[:,:,channel], 
+                    for channel in range(resized_img_RGB.shape[2]):
+                        hog_features.append(get_hog_features(resized_img_RGB[:,:,channel], 
                                             orient, pix_per_cell, cell_per_block, 
                                             vis=False, feature_vec=True))
-                    hog_features = np.ravel(hog_features)        
                 elif hog_channel == 'HSV_ALL':
-                    for channel in range(feature_image_HSV.shape[2]):
-                        hog_features.append(get_hog_features(feature_image_HSV[:,:,channel], 
+                    for channel in range(resized_img_HSV.shape[2]):
+                        hog_features.append(get_hog_features(resized_img_HSV[:,:,channel], 
                                             orient, pix_per_cell, cell_per_block, 
                                             vis=False, feature_vec=True))
-                    hog_features = np.ravel(hog_features)        
                 elif hog_channel in ['R', 'G', 'B']:
-                    hog_features = get_hog_features(feature_image_RGB[:,:,['R', 'G', 'B'].index(hog_channel)], orient, 
-                                pix_per_cell, cell_per_block, vis=False, feature_vec=True)
+                    hog_features.append(get_hog_features(resized_img_RGB[:,:,['R', 'G', 'B'].index(hog_channel)], orient, 
+                                pix_per_cell, cell_per_block, vis=False, feature_vec=True))
                 elif hog_channel in ['H', 'S', 'V']:
-                    hog_features = get_hog_features(feature_image_HSV[:,:,['H', 'S', 'V'].index(hog_channel)], orient, 
-                                pix_per_cell, cell_per_block, vis=False, feature_vec=True)
+                    hog_features.append(get_hog_features(resized_img_HSV[:,:,['H', 'S', 'V'].index(hog_channel)], orient, 
+                                pix_per_cell, cell_per_block, vis=False, feature_vec=True))
                 # Append the new feature vector to the features list
                 single_image_features.append(hog_features)
+                #print(len(single_image_features),len(single_image_features[-1]), single_image_features[-1][-1].shape)
             else:
                 single_image_features.append(hog_feat_list[idx])
         
-        all_images_features.append(np.concatenate(single_image_features))
+        all_images_features.append(np.concatenate(single_image_features).ravel())
     # Return list of feature vectors
     return all_images_features
 
@@ -390,7 +391,8 @@ def extract_hog_features_once(img, search_window, window_list, color_space='BGR'
 
 
 
-def search_windows(img, search_window, windows_list, clf, scaler, color_space='BGR', 
+def search_windows(img, search_window, windows_list, clf, scaler, 
+                    batch_hog=True, color_space='BGR', 
                     spatial_size=(32, 32), hist_bins=32, 
                     hist_range=(0, 256), orient=9, 
                     pix_per_cell=8, cell_per_block=2, 
@@ -418,9 +420,12 @@ def search_windows(img, search_window, windows_list, clf, scaler, color_space='B
         # Extract the test window from original image
         window_imgs.append(img[window[0][1]:window[1][1], window[0][0]:window[1][0]])
     # Extract all hog_features at once
-    hf_list = extract_hog_features_once(img, search_window, windows_list, color_space=color_space, 
+    if batch_hog:
+        hf_list = extract_hog_features_once(img, search_window, windows_list, color_space=color_space, 
                               orient=orient, pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
                               hog_channel=hog_channel)     
+    else:
+        hf_list = []
     
     # Extract features for that window using single_img_features()
     features_list = extract_features(window_imgs, hog_feat_list=hf_list, color_space=color_space, 
