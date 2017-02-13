@@ -35,23 +35,23 @@ from sklearn import tree
 
 # Define global variables
 # frame/image objects
-num_frames_to_keep = 5  # number of frames to store
-recent_hot_windows = [] # list of hot windows identified on recent frames
+num_frames_to_keep = 5      # number of frames to store
+recent_hot_windows = []     # list of hot windows identified on recent frames
 # classifier and training related objects
-clf = None              # classifier object
-X_scaler = None         # scaler object for normalizing inputs
+clf = None                  # classifier object
+X_scaler = None             # scaler object for normalizing inputs
 # hyper parameters for feature extraction
-color_space = 'BGR'     # color space of the images
-orient = 8              # HOG orientations
-pix_per_cell = 8        # HOG pixels per cell
-cell_per_block = 2      # HOG cells per block
-hog_channel = 'HSV_ALL' # Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
-spatial_size = (16, 16) # Spatial binning dimensions
-hist_bins = 32          # Number of histogram bins
-spatial_feat = False     # Spatial features on or off
-hist_feat_RGB = False    # Histogram features on or off on RGB image
-hist_feat_HSV = False   # Histogram features on or off on HSV image
-hog_feat = True         # HOG features on or off   
+color_space = 'BGR'         # color space of the images
+orient = 14                  # HOG orientations
+pix_per_cell = 16            # HOG pixels per cell
+cell_per_block = 3          # HOG cells per block
+target_color_space='YCrCb'    # target color space
+hog_channel = [0,1]       # Channels to extract hog from
+spatial_size = (8, 8)     # Spatial binning dimensions
+hist_bins = 16              # Number of histogram bins
+spatial_feat = True        # Spatial features on or off
+hist_feat = True           # Histogram features on or off
+hog_feat = True             # HOG features on or off   
 # Threshold for procesing heatmaps
 thresh=10
 # Search area coordinates and window sizes for far, mid-range and near cars
@@ -64,7 +64,7 @@ all_search_windows = [search_window_0,
                       search_window_2,
                       search_window_3]
 # path to the working repository
-home_computer = False
+home_computer = True
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -93,13 +93,13 @@ def extract_features_from_datasets(vehicles_trn, vehicles_tst, non_vehicles_trn,
     # Extract all features
     
     t0=time.time()
-    vehicle_features_trn = extract_features(vehicles_trn, color_space=color_space, 
+    vehicle_features_trn = extract_features(vehicles_trn, 
+                        source_color_space=color_space, target_color_space=target_color_space,
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
+                        hist_feat=hist_feat, 
                         hog_feat=hog_feat)
     t1=time.time()
     # if verbose, print some details
@@ -107,13 +107,13 @@ def extract_features_from_datasets(vehicles_trn, vehicles_tst, non_vehicles_trn,
         print(round(t1-t0, 2), 'Seconds to extract features from vehicle_features_trn...')
     
     
-    vehicle_features_tst = extract_features(vehicles_tst, color_space=color_space, 
+    vehicle_features_tst = extract_features(vehicles_tst, 
+                        source_color_space=color_space, target_color_space=target_color_space, 
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
+                        hist_feat=hist_feat,
                         hog_feat=hog_feat)
     t2=time.time()
     # if verbose, print some details
@@ -121,13 +121,13 @@ def extract_features_from_datasets(vehicles_trn, vehicles_tst, non_vehicles_trn,
         print(round(t2-t1, 2), 'Seconds to extract features from vehicle_features_tst...')
         
         
-    non_vehicle_features_trn = extract_features(non_vehicles_trn, color_space=color_space, 
+    non_vehicle_features_trn = extract_features(non_vehicles_trn, 
+                        source_color_space=color_space, target_color_space=target_color_space,
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
+                        hist_feat=hist_feat,
                         hog_feat=hog_feat)    
     t3=time.time()
     # if verbose, print some details
@@ -135,13 +135,13 @@ def extract_features_from_datasets(vehicles_trn, vehicles_tst, non_vehicles_trn,
         print(round(t3-t2, 2), 'Seconds to extract features from non_vehicle_features_trn...')
         
         
-    non_vehicle_features_tst = extract_features(non_vehicles_tst, color_space=color_space, 
+    non_vehicle_features_tst = extract_features(non_vehicles_tst, 
+                        source_color_space=color_space, target_color_space=target_color_space,
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                        hist_feat_RGB=hist_feat_RGB, 
-                        hist_feat_HSV=hist_feat_HSV, 
+                        hist_feat=hist_feat,
                         hog_feat=hog_feat)    
     
     t4=time.time()
@@ -313,13 +313,14 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
                             xy_window=xy_window, xy_overlap=(0.5, 0.5))
         # Identify windows that are classified as cars                    
         hot_windows += search_windows(frame_img, search_window, slide_windows, clf, X_scaler, 
-                                batch_hog=batch_hog, color_space=color_space, 
+                                batch_hog=batch_hog, 
+                                source_color_space=color_space, 
+                                target_color_space=target_color_space,
                                 spatial_size=spatial_size, hist_bins=hist_bins, 
                                 orient=orient, pix_per_cell=pix_per_cell, 
                                 cell_per_block=cell_per_block, 
                                 hog_channel=hog_channel, spatial_feat=spatial_feat, 
-                                hist_feat_RGB=hist_feat_RGB, 
-                                hist_feat_HSV=hist_feat_HSV, 
+                                hist_feat=hist_feat, 
                                 hog_feat=hog_feat)
     # if verbose, save some photos    
     if verbose:
