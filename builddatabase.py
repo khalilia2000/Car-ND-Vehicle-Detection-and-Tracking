@@ -440,7 +440,7 @@ def prepare_and_augment_datasets(goal_size = 16250):
 
 
 
-def extract_data_from_test_images(num_extracts_per_photo=30):
+def extract_data_from_test_images(pre_fix='', num_extracts_per_photo=30):
     '''
     Extract some random frames from test images
     '''    
@@ -472,7 +472,7 @@ def extract_data_from_test_images(num_extracts_per_photo=30):
                 window = windows[index]
                 ch_img = cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64))      
                 # Set file names to save
-                file_name_to = test_img_path+'Capture'+str(counter)+'.png'
+                file_name_to = test_img_path+pre_fix+'Capture'+str(counter)+'.png'
                 # Save image to file
                 cv2.imwrite(file_name_to, ch_img)
                 # Increment counter
