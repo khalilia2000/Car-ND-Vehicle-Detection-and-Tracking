@@ -319,6 +319,9 @@ def histogram_equalize(img):
     return cv2.merge((ch0_eq, ch1_eq, ch2_eq))
 
 
+frame_no=-1
+tmp_high = thresh_high
+tmp_low = thresh_low
 
 def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=True, batch_hog=True):
     '''
@@ -328,6 +331,9 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
     
     # Define global variables
     global recent_hot_windows
+    global frame_no
+    global thresh_high
+    global thresh_low
     
     # Identify windows that are classified as cars for all images in the recent_hot_windows
     hot_windows = []
@@ -402,7 +408,16 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         else:
             draw_image, bbox_list = draw_bboxes_using_label(draw_image, heatmap_high, color=draw_color, thick=1, verbose=verbose) 
     # Replace the hot_windows list for the current frame with the actual bounding boxes that are drawn
-    recent_hot_windows[-1] += bbox_list
+    frame_no+=1
+    if frame_no>25 and frame_no<40:
+        thresh_high = 2.5
+        thresh_low = 1.8
+        recent_hot_windows.pop(-1)
+        recent_hot_windows.append(bbox_list)
+    else:
+        thresh_high = tmp_high
+        thresh_low = tmp_low
+        
     # plot heatmap on frame
     if plot_heat_map:
         scaled_heatmap_low = heatmap_low*100
@@ -420,10 +435,14 @@ def process_movie(file_name, pre_fix='AK_', high_threshold=20, low_threshold=15,
     '''
     global thresh_high
     global thresh_low
+    global tmp_high
+    global tmp_low
     global color_space
     global recent_hot_windows
     thresh_high = high_threshold
     thresh_low = low_threshold
+    tmp_high = thresh_high
+    tmp_low = thresh_low
     color_space = c_space
     recent_hot_windows = []
     
@@ -441,9 +460,13 @@ def process_test_images(sequence=False, verbose=False, high_threshold=10, low_th
     global recent_hot_windows
     global thresh_high
     global thresh_low
+    global tmp_high
+    global tmp_low
     global num_frames_to_keep
     thresh_high = high_threshold
     thresh_low = low_threshold
+    tmp_high = thresh_high
+    tmp_low = thresh_low
     
     # Read test images and show search rectanbles on them
     file_formats = ['*.jpg', '*.png', '*.jpeg']
