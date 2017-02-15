@@ -35,7 +35,7 @@ from sklearn import tree
 
 # Define global variables
 # frame/image objects
-num_frames_to_keep = 7      # number of frames to store
+num_frames_to_keep = 5      # number of frames to store
 recent_hot_windows = []     # list of hot windows identified on recent frames
 # classifier and training related objects
 clf = None                  # classifier object
@@ -62,10 +62,10 @@ search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
 search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
 all_search_windows = [search_window_0,
                       search_window_1, 
-                      search_window_2,
-                      search_window_3]
+                      search_window_2]
+
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -256,6 +256,8 @@ def draw_bboxes_using_watershed(img, heatmap_high, heatmap_low, color=(0,0,255),
         cv2.imwrite(test_img_path+'pipeline_5.jpg', distance_high*255.0/distance_high.max())
         cv2.imwrite(test_img_path+'pipeline_6.jpg', distance_low*255.0/distance_low.max())        
         cv2.imwrite(test_img_path+'pipeline_7.jpg', labels*100)
+    # keep a list of all bounding boxes that are drawn
+    bbox_list=[]
     # Iterate through all detected cars
     for car_number in range(1, n_cars+1):
         # Find pixels with each car_number label value
@@ -265,11 +267,12 @@ def draw_bboxes_using_watershed(img, heatmap_high, heatmap_low, color=(0,0,255),
         nonzerox = np.array(nonzero[1])
         # Define a bounding box based on min/max x and y
         bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+        bbox_list.append(bbox)
         # Draw the box on the image
         cv2.rectangle(img, bbox[0], bbox[1], color, thick)
         
     # Return the image
-    return img
+    return img, bbox_list
 
 
 
@@ -286,6 +289,8 @@ def draw_bboxes_using_label(img, heatmap, color=(0,0,255), thick=2, verbose=Fals
         print(labels[1], ' cars found')
         print('maximum intensity of heatmap = ', heatmap.max())
         cv2.imwrite(test_img_path+'pipeline_5.jpg', labels[0]*100)
+    # keep a list of all bounding boxes that are drawn
+    bbox_list=[]
     # Iterate through all detected cars
     for car_number in range(1, labels[1]+1):
         # Find pixels with each car_number label value
@@ -295,11 +300,23 @@ def draw_bboxes_using_label(img, heatmap, color=(0,0,255), thick=2, verbose=Fals
         nonzerox = np.array(nonzero[1])
         # Define a bounding box based on min/max x and y
         bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+        bbox_list.append(bbox)
         # Draw the box on the image
         cv2.rectangle(img, bbox[0], bbox[1], color, thick)
     # Return the image
-    return img
+    return img, bbox_list
 
+
+
+def histogram_equalize(img):
+    '''
+    equalize histogram for all image channels
+    '''
+    ch0, ch1, ch2 = cv2.split(img)
+    ch0_eq = cv2.equalizeHist(ch0)
+    ch1_eq = cv2.equalizeHist(ch1)
+    ch2_eq = cv2.equalizeHist(ch2)
+    return cv2.merge((ch0_eq, ch1_eq, ch2_eq))
 
 
 
@@ -358,9 +375,9 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
     
     # Zero out pixels below the threshold and construct both high and low thresholded heatmaps
     heatmap_high = np.copy(heatmap)
-    heatmap_high[heatmap_high <= thresh_high] = 0    
+    heatmap_high[heatmap_high <= thresh_high*len(recent_hot_windows)] = 0    
     heatmap_low = np.copy(heatmap)
-    heatmap_low[heatmap_low <= thresh_low] = 0    
+    heatmap_low[heatmap_low <= thresh_low*len(recent_hot_windows)] = 0    
     # if verbose, save some photos and print some details   
     if verbose:
         print('maximum intensity of heatmap_high = ', heatmap_high.max())
@@ -374,8 +391,6 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         scaled_heatmap_low[scaled_heatmap_low>255] = 255
         scaled_heatmap_low[:,:,:2] = 0
         cv2.imwrite(test_img_path+'pipeline_4.jpg', cv2.addWeighted(np.copy(frame_img), 1, scaled_heatmap_low, 0.7, 0))
-        
-    
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
     if plot_box:
@@ -383,10 +398,12 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         draw_color[color_space.index('B')] = 255
         draw_color = tuple(draw_color)
         if watershed:
-            draw_image = draw_bboxes_using_watershed(draw_image, heatmap_high, heatmap_low, color=draw_color, thick=1, verbose=verbose) 
+            draw_image, bbox_list = draw_bboxes_using_watershed(draw_image, heatmap_high, heatmap_low, color=draw_color, thick=1, verbose=verbose) 
         else:
-            draw_image = draw_bboxes_using_label(draw_image, heatmap_high, color=draw_color, thick=1, verbose=verbose) 
-    
+            draw_image, bbox_list = draw_bboxes_using_label(draw_image, heatmap_high, color=draw_color, thick=1, verbose=verbose) 
+    # Replace the hot_windows list for the current frame with the actual bounding boxes that are drawn
+    recent_hot_windows.pop(-1)
+    recent_hot_windows.append(bbox_list)
     # plot heatmap on frame
     if plot_heat_map:
         scaled_heatmap_low = heatmap_low*100
@@ -405,9 +422,11 @@ def process_movie(file_name, pre_fix='AK_', high_threshold=20, low_threshold=15,
     global thresh_high
     global thresh_low
     global color_space
+    global recent_hot_windows
     thresh_high = high_threshold
     thresh_low = low_threshold
     color_space = c_space
+    recent_hot_windows = []
     
     movie_clip = VideoFileClip(work_path+file_name)
     processed_clip = movie_clip.fl_image(mark_vehicles_on_frame)
@@ -423,6 +442,7 @@ def process_test_images(sequence=False, verbose=False, high_threshold=10, low_th
     global recent_hot_windows
     global thresh_high
     global thresh_low
+    global num_frames_to_keep
     thresh_high = high_threshold
     thresh_low = low_threshold
     
@@ -573,8 +593,10 @@ def test_thresholds():
                 process_movie('clipped5.mp4', high_threshold=th, low_threshold=tl, pre_fix=pre_fix)
         
         
-
 def extract_g():
+    '''
+    Extract tree structure if tree classifier is used and write .dot files
+    '''
     i_tree = 0
     for tree_in_forest in clf.estimators_:
         with open('tree_' + str(i_tree) + '.dot', 'w') as my_file:

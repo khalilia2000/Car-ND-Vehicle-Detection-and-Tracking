@@ -16,7 +16,7 @@ from helperfunctions import slide_window
 
 
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -490,13 +490,15 @@ def generate_and_copy_additional_images(num_to_add=7500):
     
     for fname in file_names_v:
         img = cv2.imread(fname)
-        rev_img = cv2.resize(img, (64, 64))
-        cv2.imwrite(fname, rev_img)
+        if (img.shape[0]!=64) or (img.shape[1]!=64):
+            rev_img = cv2.resize(img, (64, 64))
+            cv2.imwrite(fname, rev_img)
     
     for fname in file_names_nv:
         img = cv2.imread(fname)
-        rev_img = cv2.resize(img, (64, 64))
-        cv2.imwrite(fname, rev_img)
+        if (img.shape[0]!=64) or (img.shape[1]!=64):
+            rev_img = cv2.resize(img, (64, 64))
+            cv2.imwrite(fname, rev_img)
     
     generate_additional_data(v_add_path, nv_add_path, target_number=num_to_add, verbose=False)
     
