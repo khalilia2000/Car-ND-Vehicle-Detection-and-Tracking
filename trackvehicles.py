@@ -402,8 +402,7 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         else:
             draw_image, bbox_list = draw_bboxes_using_label(draw_image, heatmap_high, color=draw_color, thick=1, verbose=verbose) 
     # Replace the hot_windows list for the current frame with the actual bounding boxes that are drawn
-    recent_hot_windows.pop(-1)
-    recent_hot_windows.append(bbox_list)
+    recent_hot_windows[-1] += bbox_list
     # plot heatmap on frame
     if plot_heat_map:
         scaled_heatmap_low = heatmap_low*100
