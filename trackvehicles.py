@@ -35,7 +35,7 @@ from sklearn import tree
 
 # Define global variables
 # frame/image objects
-num_frames_to_keep = 5      # number of frames to store
+num_frames_to_keep = 10      # number of frames to store
 recent_hot_windows = []     # list of hot windows identified on recent frames
 # classifier and training related objects
 clf = None                  # classifier object
@@ -319,9 +319,6 @@ def histogram_equalize(img):
     return cv2.merge((ch0_eq, ch1_eq, ch2_eq))
 
 
-frame_no=-1
-tmp_high = thresh_high
-tmp_low = thresh_low
 
 def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=True, batch_hog=True):
     '''
@@ -331,10 +328,6 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
     
     # Define global variables
     global recent_hot_windows
-    global frame_no
-    global thresh_high
-    global thresh_low
-    
     # Identify windows that are classified as cars for all images in the recent_hot_windows
     hot_windows = []
     # Iterate through search windows that are defined globally
@@ -407,23 +400,19 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
             draw_image, bbox_list = draw_bboxes_using_watershed(draw_image, heatmap_high, heatmap_low, color=draw_color, thick=1, verbose=verbose) 
         else:
             draw_image, bbox_list = draw_bboxes_using_label(draw_image, heatmap_high, color=draw_color, thick=1, verbose=verbose) 
-    # Replace the hot_windows list for the current frame with the actual bounding boxes that are drawn
-    frame_no+=1
-    if frame_no>25 and frame_no<40:
-        thresh_high = 2.5
-        thresh_low = 1.8
-        recent_hot_windows.pop(-1)
-        recent_hot_windows.append(bbox_list)
-    else:
-        thresh_high = tmp_high
-        thresh_low = tmp_low
-        
     # plot heatmap on frame
     if plot_heat_map:
         scaled_heatmap_low = heatmap_low*100
         scaled_heatmap_low[scaled_heatmap_low>255] = 255
         scaled_heatmap_low[:,:,:2] = 0
         draw_image = cv2.addWeighted(draw_image, 1, scaled_heatmap_low, 0.5, 0)
+    # remove this later
+    #print(heatmap.max())
+    #scaled_heatmap = heatmap_high*100
+    #scaled_heatmap[scaled_heatmap>255] = 255
+    #scaled_heatmap[:,:,:2] = 0
+    #cv2.imwrite(work_path+'tmp/frame_{:04d}.png'.format(frame_no), cv2.cvtColor(draw_image, cv2.COLOR_RGB2BGR))
+    #cv2.imwrite(work_path+'tmp/heatmap_{:04d}.jpg'.format(frame_no), cv2.cvtColor(cv2.addWeighted(np.copy(draw_image), 1, scaled_heatmap, 0.7, 0),cv2.COLOR_RGB2BGR))
     
     return draw_image
 
