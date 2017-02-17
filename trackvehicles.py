@@ -57,10 +57,10 @@ hog_feat = True             # HOG features on or off
 thresh_high=10
 thresh_low=5
 # Search area coordinates and window sizes for far, mid-range and near cars
-search_window_0 = (np.array([[0.5,1.0], [0.5, 1.0]]), 32)
-search_window_1 = (np.array([[0.5,1.0], [0.5, 1.0]]), 64)
-search_window_2 = (np.array([[0.5,1.0], [0.5, 1.0]]), 96)
-search_window_3 = (np.array([[0.5,1.0], [0.5, 1.0]]), 128)
+search_window_0 = (np.array([[0.0,1.0], [0.5, 1.0]]), 32)
+search_window_1 = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
+search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
+search_window_3 = (np.array([[0.0,1.0], [0.5, 1.0]]), 128)
 all_search_windows = [search_window_1,
                       search_window_2, 
                       search_window_3]
@@ -69,7 +69,7 @@ frame_no=0
 
 
 # path to the working repository
-home_computer = True
+home_computer = False
 if home_computer == True:
     work_path = 'C:/Udacity Courses/Car-ND-Udacity/P5-Vehicle-Tracking/'
 else:
@@ -324,18 +324,31 @@ def histogram_equalize(img):
     return cv2.merge((ch0_eq, ch1_eq, ch2_eq))
 
 
+max_heat_list = []  # for debugging purposes
+frame_no = 0        # for debugging purposes
+
 
 def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=True, 
                            batch_hog=True, debug=False):
     '''
     Identify the vehicles in a frame and return the revised frame with vehicles identified
     with bounding boxes
+    frame_img: the frame image to be revised
+    verbose: determine the verbosity of the operation
+    plot_heat_map: plots the heatmap on the frame
+    plot_box: plots bounding boxes on the frame
+    watershed: uses the watershed algorithm for identifying cars
+    batch_hog: uses batch_hog algorithm to speed up the process of hog feature extraction
+    debug: debug mode
     '''
     
     # Define global variables
     global frame_no    
     global recent_hot_windows
     global recent_bbox_windows
+    global max_heat_list
+    global thresh_high
+    global thresh_low
     # Identify windows that are classified as cars for all images in the recent_hot_windows
     hot_windows = []
     # Iterate through search windows that are defined globally
@@ -374,14 +387,7 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         for window in frame_hot_windows:
             heatmap[window[0][1]:window[1][1], window[0][0]:window[1][0]] += 1
     # Normalize the pixel values
-    heatmap = cv2.convertScaleAbs(heatmap, heatmap, 1/len(recent_hot_windows))
-    
-    # Create masked heatmap from the recent bboxes
-    mask_img = np.zeros_like(frame_img)
-    for frame_bboxes in recent_bbox_windows:
-        for bbox in frame_bboxes:
-            mask_img[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]] = 255
-    heatmap_masked = cv2.bitwise_and(heatmap, mask_img)
+    heatmap = cv2.convertScaleAbs(heatmap, heatmap, 1/len(recent_hot_windows))    
     
     # if verbose, plot the heatmap and save to file   
     if verbose:
@@ -408,6 +414,7 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
         scaled_heatmap_low = cv2.convertScaleAbs(heatmap_low,scaled_heatmap_low,255/heatmap_low.max())
         scaled_heatmap_low[:,:,:2] = 0
         cv2.imwrite(test_img_path+'pipeline_4.jpg', cv2.addWeighted(np.copy(frame_img), 1, scaled_heatmap_low, 0.7, 0))
+    
     # Draw the bounding boxes on the images
     draw_image = np.copy(frame_img)
     if plot_box:
@@ -419,10 +426,12 @@ def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_b
                                                                 color=draw_color, thick=1, verbose=verbose) 
         else:
             draw_image, bbox_list = draw_bboxes_using_label(draw_image, heatmap_high, color=draw_color, thick=1, verbose=verbose) 
+    
     # keep track of the bounding goxes in the most recent frames
     recent_bbox_windows.append(bbox_list)
     if len(recent_bbox_windows) > num_frames_to_keep:
         recent_bbox_windows.pop(0)
+    
     # plot heatmap on frame
     if plot_heat_map:
         scaled_heatmap_low = heatmap_low*100
