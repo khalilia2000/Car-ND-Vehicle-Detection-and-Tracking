@@ -30,25 +30,25 @@ I did use the template provided in the course notes and modified it. You're read
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
 `read_data_and_train_classifier()` (defined in lines ### to ### in `trackvehicles.py`) reads the trainnig images and trains a classifier. The following pipeline is used:  
-- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines ### to ### of `helperfunctions.py`). The dataset is split into training and test datasets such that all test datasets form a consequtive block to avoid cross-contamination between datasets resulting from close/consecutive images that are in the datasets (i.e. set the random=False).  In forming the datasets, additional iamges were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets. I also added the horizontally flipped images to completment the datasets. Total vehicle and non-vehicle images that I used were 60,000, and 60,000 respectively. Here is an example of one of each of the `vehicle` and `non-vehicle` dataset classes:  
+- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines ### to ### of `helperfunctions.py`). The dataset is split into training and test datasets such that all images in test datasets form a consequtive block to avoid cross-contamination between training and test datasets, which may result due to close/consecutive images (i.e. this is achieved by setting the random=False).  In forming the datasets, additional images were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets.  I also added the horizontally flipped images to completment the datasets. Total vehicle and non-vehicle images that I used were 60,000, and 60,000 respectively. below are a few examples of the `vehicle` and `non-vehicle` dataset classes:  
 
 | Example Training Image - Vehicle | Example Training Image - Non-Vehicle |
 |:--------------------------------:|:------------------------------------:| 
-| <img src="./output_images/example_v.png" alt="Example of a vehicle in training dataset" height =128 width=128> | <img src="./output_images/example_nv.png" alt="Example of a non-vehicle in training dataset" height =128 width=128> |
+| <img src="./output_images/vehicles.png" alt="Example of vehicle images in training dataset" height =128 width=128> | <img src="./output_images/non_vehicles.png" alt="Example of non-vehicle images in training dataset" height =128 width=128> |
 
 - `extract_features_from_datasets()` is then called (defined in lines ### to ### in `trackvehicles.py`), which in turn calls:
-  - `extract_features()` (defined in lines ### to ### in `helperfunctions.py`) was used to extract all the features for trainin and test datasets that correspond to both vehciles and non-vehicles. Features such as spatial bins, color histogram features and HOG features were extracted. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines ### to ### of `trackvehicles.py`. This function calls:
+  - `extract_features()` (defined in lines ### to ### in `helperfunctions.py`). This function was used to extract all the features for trainin and test datasets that correspond to both vehciles and non-vehicles. Features such as spatial bins, color histogram features and HOG features were extracted. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines ### to ### of `trackvehicles.py`. This function calls:  
     - `color_hist()` (defined in lines ### to ### of `helperfunctions.py`) to extract color histogram features;  
     - `bin_spatial()` (defined in lines ### to ### of `helperfunctions.py`) to extract spatial features; and  
     - `get_hog_features()` (defined in lines ### to ### of `helperfunctions.py`) to extract the hog features.    
  
-I randomly plotted the resulting HOG features image using various color spaces and found out that the cars reasonably better visible/identifiable in YCrCb color space. The first 2 channels provide the most informatin that is required for classifying the vehicles/non-vehicles.
+I randomly plotted the resulting HOG features images using various color spaces and found out that the vehicles are reasonably better visible/identifiable in YCrCb color space. The first 2 channels provide the most informatin that is required for classifying the vehicles/non-vehicles.
 
-Here are examples of the resulting hog-images using 'YCrCb', `HSV` and `RGB` color spaces and HOG parameters of `orientations=14`, `pixels_per_cell=(16, 16)` and `cells_per_block=(3, 3)`:
+Here are examples of the resulting hog-images using `YCrCb`, `HSV` and `RGB` color spaces and HOG parameters of `orientations=14`, `pixels_per_cell=(16, 16)` and `cells_per_block=(3, 3)`:
 
-| Image in HSV color space | HOG feature image - Y channel | HOG feature image - Cr channel | HOG feature image - Cb channel |
-|:--------------:|:-----------------------------:|:-----------:|:-----------:| 
-| <img src="./output_images/example_v_hsv.png" height =128 width=128> | <img src="./output_images/example_hog_h.png" height =128 width=128> | <img src="./output_images/example_hog_s.png" height =128 width=128> | <img src="./output_images/example_hog_v.png" height =128 width=128> |
+| Original vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively | Original non_vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively |
+|:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:| 
+| <img src="./output_images/vehicles_hog_YCrCb.png" height =128 width=128> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height =128 width=128> |
 
 
 | Image in HSV color space | HOG feature image - H channel | HOG feature image - S channel | HOG feature image - V channel |
