@@ -34,7 +34,7 @@ I did use the template provided in the course notes and modified it. You're read
 
 | Example Training Image - Vehicle | Example Training Image - Non-Vehicle |
 |:--------------------------------:|:------------------------------------:| 
-| <img src="./output_images/vehicles.png" alt="Example of vehicle images in training dataset" height =128 width=128> | <img src="./output_images/non_vehicles.png" alt="Example of non-vehicle images in training dataset" height =128 width=128> |
+| <img src="./output_images/vehicles.png" alt="Example of vehicle images in training dataset" height =750 width=144> | <img src="./output_images/non_vehicles.png" alt="Example of non-vehicle images in training dataset" height =750 width=144> |
 
 - `extract_features_from_datasets()` is then called (defined in lines ### to ### in `trackvehicles.py`), which in turn calls:
   - `extract_features()` (defined in lines ### to ### in `helperfunctions.py`). This function was used to extract all the features for trainin and test datasets that correspond to both vehciles and non-vehicles. Features such as spatial bins, color histogram features and HOG features were extracted. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines ### to ### of `trackvehicles.py`. This function calls:  
@@ -48,17 +48,10 @@ Here are examples of the resulting hog-images using `YCrCb`, `HSV` and `RGB` col
 
 | Original vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively | Original non_vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively |
 |:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:| 
-| <img src="./output_images/vehicles_hog_YCrCb.png" height =128 width=128> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height =128 width=128> |
+| <img src="./output_images/vehicles_hog_YCrCb.png" height=750 width=580> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height=750 width=580) |
 
 
-| Image in HSV color space | HOG feature image - H channel | HOG feature image - S channel | HOG feature image - V channel |
-|:--------------:|:-----------------------------:|:-----------:|:-----------:| 
-| <img src="./output_images/example_v_hsv.png" height =128 width=128> | <img src="./output_images/example_hog_h.png" height =128 width=128> | <img src="./output_images/example_hog_s.png" height =128 width=128> | <img src="./output_images/example_hog_v.png" height =128 width=128> |
 
-
-| Image in RGB color space | HOG feature image - R channel | HOG feature image - G channel | HOG feature image - B channel |
-|:--------------:|:-----------------------------:|:-----------:|:-----------:| 
-| <img src="./output_images/example_v.png" height =128 width=128> | <img src="./output_images/example_hog_r.png" height =128 width=128> | <img src="./output_images/example_hog_g.png" height =128 width=128> | <img src="./output_images/example_hog_b.png" height =128 width=128> |
 
 
 
