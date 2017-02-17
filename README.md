@@ -1,13 +1,12 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
+##Car-ND-Vehicle-Detection-and-Tracking
 
 ---
 
-**Vehicle Detection Project**
+**Vehicle Detection and Tracking Project**
 
 The goals / steps of this project are the following:
 
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
+* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a Linear SVM classifier.
 * Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
 * Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
 * Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
@@ -30,15 +29,27 @@ I did use the template provided in the course notes and modified it. You're read
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-`get_hog_features()` function was definned (lines 99 to 124 in `helperfunctions.py`) to extract the hog_features from an image. I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (lines 40 to 95 of `helperfunctions.py`). I split the dataset into training and test datasets such that all test datasets form a consequtive block to avoid cross-contamination between datasets resulting from close images that are in the datasets. In forming the datasets, I also extracted some additional iamges from the AUTTI dataset and added them to both datasets. I also added the horizontally flipped images to completment the datasets. In addition, I added some images from my own video feed.. Total vehicle and non-vehicle images that I used were 30,000, and 30,000 respectively.  Here is an example of one of each of the `vehicle` and `non-vehicle` dataset classes:
+`read_data_and_train_classifier()` (defined in lines ### to ### in `trackvehicles.py`) reads the trainnig images and trains a classifier. The following pipeline is used:  
+- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines ### to ### of `helperfunctions.py`). The dataset is split into training and test datasets such that all test datasets form a consequtive block to avoid cross-contamination between datasets resulting from close/consecutive images that are in the datasets (i.e. set the random=False).  In forming the datasets, additional iamges were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets. I also added the horizontally flipped images to completment the datasets. Total vehicle and non-vehicle images that I used were 60,000, and 60,000 respectively. Here is an example of one of each of the `vehicle` and `non-vehicle` dataset classes:  
 
 | Example Training Image - Vehicle | Example Training Image - Non-Vehicle |
 |:--------------------------------:|:------------------------------------:| 
 | <img src="./output_images/example_v.png" alt="Example of a vehicle in training dataset" height =128 width=128> | <img src="./output_images/example_nv.png" alt="Example of a non-vehicle in training dataset" height =128 width=128> |
 
-I then used function `extract_features()` (lines 159 to 240 of`helperfunctions.py`) to extract features such as spatial bins, color histogram features and HOG features. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines 37 to 47 of `trackvehicles.py`. I randomly plotted the resulting HOG features image using various color spaces and found out that the cars are better visible in G channel, but the combined information contained in the HSV color space (i.e. all H, S and V channels combined) are more valuable in classifying the vehicle images. 
+- `extract_features_from_datasets()` is then called (defined in lines ### to ### in `trackvehicles.py`), which in turn calls:
+  - `extract_features()` (defined in lines ### to ### in `helperfunctions.py`) was used to extract all the features for trainin and test datasets that correspond to both vehciles and non-vehicles. Features such as spatial bins, color histogram features and HOG features were extracted. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines ### to ### of `trackvehicles.py`. This function calls:
+    - `color_hist()` (defined in lines ### to ### of `helperfunctions.py`) to extract color histogram features;  
+    - `bin_spatial()` (defined in lines ### to ### of `helperfunctions.py`) to extract spatial features; and  
+    - `get_hog_features()` (defined in lines ### to ### of `helperfunctions.py`) to extract the hog features.    
+ 
+I randomly plotted the resulting HOG features image using various color spaces and found out that the cars reasonably better visible/identifiable in YCrCb color space. The first 2 channels provide the most informatin that is required for classifying the vehicles/non-vehicles.
 
-Here are examples of using the `HSV` and `RGB` color spaces and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+Here are examples of the resulting hog-images using 'YCrCb', `HSV` and `RGB` color spaces and HOG parameters of `orientations=14`, `pixels_per_cell=(16, 16)` and `cells_per_block=(3, 3)`:
+
+| Image in HSV color space | HOG feature image - Y channel | HOG feature image - Cr channel | HOG feature image - Cb channel |
+|:--------------:|:-----------------------------:|:-----------:|:-----------:| 
+| <img src="./output_images/example_v_hsv.png" height =128 width=128> | <img src="./output_images/example_hog_h.png" height =128 width=128> | <img src="./output_images/example_hog_s.png" height =128 width=128> | <img src="./output_images/example_hog_v.png" height =128 width=128> |
+
 
 | Image in HSV color space | HOG feature image - H channel | HOG feature image - S channel | HOG feature image - V channel |
 |:--------------:|:-----------------------------:|:-----------:|:-----------:| 
@@ -48,6 +59,8 @@ Here are examples of using the `HSV` and `RGB` color spaces and HOG parameters o
 | Image in RGB color space | HOG feature image - R channel | HOG feature image - G channel | HOG feature image - B channel |
 |:--------------:|:-----------------------------:|:-----------:|:-----------:| 
 | <img src="./output_images/example_v.png" height =128 width=128> | <img src="./output_images/example_hog_r.png" height =128 width=128> | <img src="./output_images/example_hog_g.png" height =128 width=128> | <img src="./output_images/example_hog_b.png" height =128 width=128> |
+
+
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
