@@ -37,7 +37,7 @@ def base_name(x_str):
     return (len(res_str), res_str)
 
 
-def read_datasets(limit_trn=-1, random=True):
+def read_datasets(limit_trn=-1, random=False):
     '''
     Read in cars and non-cars datasets
     '''
@@ -158,7 +158,6 @@ def bin_spatial(img, size=(32, 32)):
 
 
 
-# NEED TO CHANGE bins_range if reading .png files with mpimg!
 def color_hist(img, nbins=32, bins_range=(0, 256)):
     '''
     Computer color histogram features

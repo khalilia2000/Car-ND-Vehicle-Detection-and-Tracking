@@ -65,7 +65,9 @@ all_search_windows = [search_window_1,
                       search_window_2, 
                       search_window_3]
 # To keep track of the frame number during video processing for debugging purposes
-frame_no=0
+frame_no=0          # for debugging purposes
+max_heat_list = []  # for debugging purposes
+
 
 
 # path to the working repository
@@ -324,9 +326,6 @@ def histogram_equalize(img):
     return cv2.merge((ch0_eq, ch1_eq, ch2_eq))
 
 
-max_heat_list = []  # for debugging purposes
-frame_no = 0        # for debugging purposes
-
 
 def mark_vehicles_on_frame(frame_img, verbose=False, plot_heat_map=False, plot_box=True, watershed=True, 
                            batch_hog=True, debug=False):
@@ -519,7 +518,7 @@ def process_test_images(sequence=False, verbose=False, high_threshold=10, low_th
 
     
 
-def read_data_and_train_classifier(limit_trn=-1, random=True, verbose=True, **clf_kwargs):
+def read_data_and_train_classifier(limit_trn=-1, random=False, verbose=True, **clf_kwargs):
     '''
     reset clf and X_scaler variables, read training data and train the classifier from scratch
     '''
@@ -571,7 +570,7 @@ def load_from_file(clf_fname, xscaler_fname):
 
 
 
-def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV','Gray']):
+def plot_hog_images(data_tuple, indices=None, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV','Gray']):
     '''
     plots random hog features images from the dataset that is passed on to this function.
     data_tupe: 2-tuple with first element containing the images, and 2nd element containnig the filenames.
@@ -595,7 +594,8 @@ def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV'
         
     ax_list = []
     counter = 0
-    indices = np.random.choice(len(data_tuple[0]), num_images)
+    if indices is None:
+        indices = np.random.choice(len(data_tuple[0]), num_images)
     for idx, ch_ind in enumerate(indices):
         img = data_tuple[0][ch_ind]
         fname = data_tuple[1][ch_ind]
@@ -619,6 +619,9 @@ def plot_hog_images(data_tuple, num_images=5, cs_list=['RGB','HSV','YCrCb','LUV'
                 ax_list[-1].axis('off')
                 counter+=1
     plt.savefig(test_img_path+'hog_feat_plot.png')
+    
+    return indices
+    
 
 
 def test_thresholds():
