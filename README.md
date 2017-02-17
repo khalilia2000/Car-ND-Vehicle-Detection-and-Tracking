@@ -46,10 +46,23 @@ I randomly plotted the resulting HOG features images using various color spaces 
 
 Here are examples of the resulting hog-images using `YCrCb`, `HSV` and `RGB` color spaces and HOG parameters of `orientations=14`, `pixels_per_cell=(16, 16)` and `cells_per_block=(3, 3)`:
 
+
+YCrCb Color Space:  
 | Original vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively | Original non_vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively |
 |:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:| 
-| <img src="./output_images/vehicles_hog_YCrCb.png" height=680 width=600> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height=680 width=600)> |
+| <img src="./output_images/vehicles_hog_YCrCb.png" height=660 width=600> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height=660 width=600)> |
 
+  
+HSV Color Space:  
+| Original vehicle image and HOG feature images obtained from channels 0, 1 and 2 of HSV color space respectively | Original non_vehicle image and HOG feature images obtained from channels 0, 1 and 2 of HSV color space respectively |
+|:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:| 
+| <img src="./output_images/vehicles_hog_HSV.png" height=660 width=600> | <img src="./output_images/non_vehicles_hog_HSV.png" height=660 width=600)> |
+
+  
+RGB Color Space:  
+| Original vehicle image and HOG feature images obtained from channels 0, 1 and 2 of RGB color space respectively | Original non_vehicle image and HOG feature images obtained from channels 0, 1 and 2 of RGB color space respectively |
+|:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:| 
+| <img src="./output_images/vehicles_hog_RGB.png" height=660 width=600> | <img src="./output_images/non_vehicles_hog_RGB.png" height=660 width=600)> |
 
 
 
