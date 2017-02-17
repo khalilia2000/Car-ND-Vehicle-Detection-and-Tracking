@@ -30,7 +30,7 @@ I did use the template provided in the course notes and modified it. You're read
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
 `read_data_and_train_classifier()` (defined in lines ### to ### in `trackvehicles.py`) reads the trainnig images and trains a classifier. The following pipeline is used:  
-- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines ### to ### of `helperfunctions.py`). The dataset is split into training and test datasets such that all images in test datasets form a consequtive block to avoid cross-contamination between training and test datasets, which may result due to close/consecutive images (i.e. this is achieved by setting the random=False).  In forming the datasets, additional images were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets.  I also added the horizontally flipped images to completment the datasets. Total vehicle and non-vehicle images that I used were 60,000, and 60,000 respectively. below are a few examples of the `vehicle` and `non-vehicle` dataset classes:  
+- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines ### to ### of `helperfunctions.py`). The datasets are split into training and test datasets such that all images in test datasets form a consequtive block to avoid cross-contamination between training and test datasets (note this may occur due to the close/consecutive images in the datasets that are extracted from a video stream.). In forming the datasets, additional images were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets.  I also added the horizontally flipped images to completment the datasets. The total number of vehicle and non-vehicle images included in the datasets were 60,000, and 60,000 respectively. About 20% of the images were set aside for testing the classifier and the rest were used for training the classifier (line # of `helperfunctions.py`). Below are a few examples of the `vehicle` and `non-vehicle` dataset classes:  
 
 | Example Training Image - Vehicle | Example Training Image - Non-Vehicle |
 |:--------------------------------:|:------------------------------------:| 
@@ -68,6 +68,7 @@ RGB Color Space:
 | <img src="./output_images/vehicles_hog_RGB.png" height=660 width=600> | <img src="./output_images/non_vehicles_hog_RGB.png" height=660 width=600)> |
 
 
+Although 16x16 pixels per cell appear to be coarse, in practice it results in good classification of vehicles vs. non-vehicles and also results in faster training due to the lower number of features.
 
 
 
