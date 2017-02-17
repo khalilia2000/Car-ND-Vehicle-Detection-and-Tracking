@@ -48,7 +48,7 @@ Here are examples of the resulting hog-images using `YCrCb`, `HSV` and `RGB` col
 
 | Original vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively | Original non_vehicle image and HOG feature images obtained from channels 0, 1 and 2 of YCrCb color space respectively |
 |:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:| 
-| <img src="./output_images/vehicles_hog_YCrCb.png" height=650 width=550> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height=650 width=550)> |
+| <img src="./output_images/vehicles_hog_YCrCb.png" height=620 width=550> | <img src="./output_images/non_vehicles_hog_YCrCb.png" height=620 width=550)> |
 
 
 
