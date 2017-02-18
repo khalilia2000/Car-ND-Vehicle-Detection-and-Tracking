@@ -10,8 +10,6 @@ import cv2
 from skimage.feature import hog
 import numpy as np
 import os
-import matplotlib.pyplot as plt
-
 
 # path to the working repository
 home_computer = False
@@ -31,6 +29,9 @@ base_size = 64
 
 
 def base_name(x_str):
+    '''
+    extract the base name of a file only to the '_' character
+    '''
     res_str = os.path.basename(x_str)[0:os.path.basename(x_str).find('.')]
     if res_str.find('_') > 0:
         res_str = res_str[0:res_str.find('_')]
@@ -39,7 +40,9 @@ def base_name(x_str):
 
 def read_datasets(limit_trn=-1, random=False):
     '''
-    Read in cars and non-cars datasets
+    Read in vehicles and non-vehicles datasets
+    limit_trn: if -1 all available images are read, otherwise the number is limited to this value
+    random: if True randomly select the location of the test dataset.
     '''
     
     file_formats = ['*.jpg', '*.png']
@@ -64,7 +67,7 @@ def read_datasets(limit_trn=-1, random=False):
         non_vehicles.append(img)
     
     # Randomly split the dataset into train and test datasets
-    # Select test data set as a consequtive block to avoid contaminating datasets
+    # Select test dataset as a consequtive block to avoid contaminating datasets
     test_size = 0.2
     vehicle_test_size = round(test_size*len(vehicles))
     non_vehicle_test_size = round(test_size*len(non_vehicles))
@@ -121,11 +124,12 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
                         vis=False, feature_vec=True):
     '''
     Return hog features and visuatlization
+    img: image to be processed
     orient: orientation bins (parameter to hog function)
     pix_per_call: (parameter to hog function)
     cells_per_block: (paramter to hog function)
     vis: visualize (paremter to hog function)
-    feature_ved: feature_vector (parameter to hog function)
+    feature_vec: feature_vector (parameter to hog function)
     '''
     # Call with two outputs if vis==True
     if vis == True:
@@ -186,14 +190,14 @@ def extract_features(imgs, hog_feat_list=[],
     '''
     Extract features from a list of images
     hog_feat_list: len=0 or len=len(imgs); passed on hog features for the images in the list
-    color_space: expected color space of the image
+    source_color_space: expected color space of the image
+    target_color_space: target color space of the image
     spatial size: passed to bin_spatial()
     hist_bins: passed to color_hist()
     pix_per_cell, cell_per_block, orient: passed to get_hog_features()
-    hog_channel: Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
+    hog_channel: array indicating the channel numbers of the target_color_space
     spatial_feat: if True calls bin_spatial()
-    hist_feat_RGB: if True calls color_hist() on RGB image
-    hist_feat_HSV: if True calls color_hist() on HSV image
+    hist_feat: if True calls color_hist() 
     hog_feat: if True calls get_hog_features()
     '''    
     # Create a list to append feature vectors to
@@ -299,9 +303,10 @@ def extract_hog_features_once(img, search_window, window_list, source_color_spac
     search_window: the area of the image that is being searched: (np.array([[xmin,xmax], [ymin, ymax]]), window_size)
                    xmin, xmax, ymin and ymax are in fractions of image size
     window_list: list of windows that are passd on
-    color_space: the color space relevant to the image
+    source_color_space: expected color space of the image
+    target_color_space: target color space of the image
     pix_per_cell, cell_per_block, orient: passed to get_hog_features()
-    hog_channel: Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
+    hog_channel: array indicating the channel numbers of the target_color_space
     '''
     # Calculate the scaled image size given the size of the search windows and the base_size
     scaled_size = (round(base_size/search_window[1]*img.shape[1]), round(base_size/search_window[1]*img.shape[0]))
@@ -358,19 +363,23 @@ def search_windows(img, search_window, windows_list, clf, scaler,
                     spatial_size=(32, 32), hist_bins=32, 
                     hist_range=(0, 256), orient=9, 
                     pix_per_cell=8, cell_per_block=2, 
-                    hog_channel='G', spatial_feat=True, 
+                    hog_channel=[1], spatial_feat=True, 
                     hist_feat=True, 
                     hog_feat=True):
     '''
     Search image using windows and assess the predictions
-    color_space: expected color space of the image
+    search_window: list of areas of the interest to search and window sizes
+    clf: classifier
+    scaler: X_scaler to normalize the features
+    source_color_space: expected color space of the image
+    target_color_space: target color space of the image
     spatial size: passed to bin_spatial()
     hist_bins: passed to color_hist()
     pix_per_cell, cell_per_block, orient: passed to get_hog_features()
-    hog_channel: Can be 'B', 'G', 'R', 'H', 'S', 'V', 'RGB_ALL' or 'HSV_ALL'
+    hog_channel: array indicating the channel numbers of the target_color_space
     spatial_feat: if True calls bin_spatial()
     hist_feat: if True calls color_hist()
-    hog_feat: if True calls get_hog_features()
+    hog_feat: if True extracts HOG featurse
     '''
     #Create an empty list to receive positive detection windows
     on_windows = []
@@ -471,7 +480,8 @@ def visualize_search_windows_on_test_images(search_area, window_size, overlap=0.
             cv2.imwrite(test_img_path+file_name_to, img_rev)        
     # Return revised image
     return imgs_rev
-        
+      
+      
 
 def main():
     pass
