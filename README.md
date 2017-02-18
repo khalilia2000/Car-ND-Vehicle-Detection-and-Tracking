@@ -186,3 +186,9 @@ The following situations may result in the failure of the pipeline:
 2- Given the search window sizes that I used and the thresholding operation, the smaller cars (i.e. the cars on the other side of the road, or he cars that are very far) cannot be detected. Perhaps a separate search can be done and dedicated in identifying the smaller cars, but this will result in a time-consuming operation which may not be warranted for a live feed video.
 
 
+The following can be done to make the program mor robust:
+1- Come up with better classifiers. Use deep learning techniques.
+2- Use better and more training exmaples (i.e. in different light conditions, etc.).
+3- Use images that only show parts of a car in the training dataset (note that is what I did with the AUTTI dataset inclusion).
+4- Use a better algorithm to detect overlapping cars.
+5- Track the position and size of each car through the recent frames. That way one can smooth out the trackign windows and avoid flickering changes in the bounding boxes. Also False negatives can be avoided to some extnet using thsi technique.
