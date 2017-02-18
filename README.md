@@ -140,7 +140,7 @@ The above pipeline is shown consecutively in the example images below:
 
 | Description    | Image      |
 |:--------------:|:----------:|
-| Original Image | <img src="./output_images/pipeline_0.jpg" height =288 width=512> |
+| Original Image | <img src="./output_images/pipeline_0.png" height =288 width=512> |
 | Image with hot windows drawn (Step 1 above) | <img src="./output_images/pipeline_1.jpg" height =288 width=512> |
 | Image with heatmap drawn (Step 3 above) | <img src="./output_images/pipeline_2.jpg" height =288 width=512> |
 | Image with high thresholded heatmap drawn (Step 4 above) | <img src="./output_images/pipeline_3.jpg" height =288 width=512> |
@@ -148,23 +148,27 @@ The above pipeline is shown consecutively in the example images below:
 | Applying the distance function to the high thresholded heatmap (Step 5 above) | <img src="./output_images/pipeline_5.jpg" height =288 width=512> |
 | Applying the distance function to the low thresholded heatmap (Step 5 above) | <img src="./output_images/pipeline_6.jpg" height =288 width=512> |
 | Identify car blobs using label function (Step 5 above) | <img src="./output_images/pipeline_7.jpg" height =288 width=512> |
-| Processed image with bounding boxes drawn on it (Step 5 above) | <img src="./output_images/pipeline_8.jpg" height =288 width=512> |
+| Processed image with bounding boxes drawn on it (Step 5 above) | <img src="./output_images/pipeline_8.png" height =288 width=512> |
 
 ---
 
 ### Video Implementation
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)  
+
+Here's a [link to my video result](./Processed_project_video.mp4)
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used blob detection in Sci-kit Image (Determinant of a Hessian [`skimage.feature.blob_doh()`](http://scikit-image.org/docs/dev/auto_examples/plot_blob.html) worked best for me) to identify individual blobs in the heatmap and then determined the extent of each blob using [`skimage.morphology.watershed()`](http://scikit-image.org/docs/dev/auto_examples/plot_watershed.html). I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+The following pipeline is used:  
+- I recorded the positions of positive detections in each frame of the video and stored them in `recent_hot_windows` (defined globally in line # of `trackvehicles.py`).  
+- From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions (using 2 thresholds as explained above).  
+- I then used  `draw_bboxes_using_watershed()` (defined in lines ### to ### of `trackvehicles.py`), which uses the `watershed()` method function from `skimage.morphology` library as well as `label()` from `scipy.ndimage.measurements` and `distance()` function from `scipy.ndimage` library to identify the zones that are connected together in the heatmap.  
+- Using the `watershed()` function allows for overlapping bounding boxes. However, I used a rather large window size of 144 by 144 for searching local maxima on the result of the `distance` function (line # of `trackvechicles.py`). This resulted in smoother bounding boxes in the video stream but came at the expense of putting one bounding box over two vehicles if they are too close or overlapping.  
+- After each car area is detected, then the maximum and minimum x and y of each labeled area (which was determined by using `label()` function - line ### of `trackvehicles.py`) is used to determine the bounding box (line ### of `trackvehicles.py`)
 
-Here's an example result showing the heatmap and bounding boxes overlaid on a frame of video:
-
-![alt text][image5]
+The pipeline images presented above shows the operation inside the `draw_bboxes_using_watershed()` function in a graphical way.
 
 ---
 
@@ -172,5 +176,12 @@ Here's an example result showing the heatmap and bounding boxes overlaid on a fr
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+The following challenges were faced during this problem:  
+1- The dark car color in the video stream initially posed a challenge because the dark colors associated with shadows, etc. were initially associated with non-vehicles class. However, after switching the color space to YCrCb color space and adding additional training images, this obstacle was overcome.  
+2- Initially the white car could not be identified when slightly far away from the source camers (also see below). However, with changing the window search sizes, and thresholding/averaging over 10 frames it finally worked.
+
+The following situations may result in the failure of the pipeline:  
+1- When lighting conditions change (i.e. shaddows on the road, and or change in the color of the asphalt), the classifier may identify many false positives, which is not good. The threshold values can be adjusted to resolve this, but this results in dynamically changing the threshold values to account for the lighting conditions.
+2- Given the search window sizes that I used and the thresholding operation, the smaller cars (i.e. the cars on the other side of the road, or he cars that are very far) cannot be detected. Perhaps a seaparate search can be done and dedicated in identifying the smaller cars, but this will result in a time-consuming operation which may not be warranted for a live feed video.
+
 
