@@ -29,18 +29,18 @@ I did use the template provided in the course notes and modified it. You're read
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-`read_data_and_train_classifier()` (defined in lines ### to ### in `trackvehicles.py`) reads the trainnig images and trains a classifier. The following pipeline is used:  
-- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines ### to ### of `helperfunctions.py`). The datasets are split into training and test datasets such that all images in test datasets form a consequtive block to avoid cross-contamination between training and test datasets (note this may occur due to the close/consecutive images in the datasets that are extracted from a video stream.). In forming the datasets, additional images were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets.  I also added the horizontally flipped images to completment the datasets. The total number of vehicle and non-vehicle images included in the datasets were 60,000, and 60,000 respectively. About 20% of the images were set aside for testing the classifier and the rest were used for training the classifier (line # of `helperfunctions.py`). Below are a few examples of the `vehicle` and `non-vehicle` dataset classes:  
+`read_data_and_train_classifier()` (defined in lines 519 to 548 in `trackvehicles.py`) reads the trainnig images and trains a classifier. The following pipeline is used:  
+- I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines 41 to 118 of `helperfunctions.py`). The datasets are split into training and test datasets such that all images in test datasets form a consequtive block to avoid cross-contamination between training and test datasets (note this may occur due to the close/consecutive images in the datasets that are extracted from a video stream.). In forming the datasets, additional images were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets.  I also added the horizontally flipped images to completment the datasets. The total number of vehicle and non-vehicle images included in the datasets were 60,000, and 60,000 respectively. About 20% of the images were set aside for testing the classifier and the rest were used for training the classifier (line # of `helperfunctions.py`). Below are a few examples of the `vehicle` and `non-vehicle` dataset classes:  
 
 | Example Training Image - Vehicle | Example Training Image - Non-Vehicle |
 |:--------------------------------:|:------------------------------------:| 
 | <img src="./output_images/vehicles.png" alt="Example of vehicle images in training dataset" height =750 width=144> | <img src="./output_images/non_vehicles.png" alt="Example of non-vehicle images in training dataset" height =750 width=144> |
 
-- `extract_features_from_datasets()` is then called (defined in lines ### to ### in `trackvehicles.py`), which in turn calls:
-  - `extract_features()` (defined in lines ### to ### in `helperfunctions.py`). This function was used to extract all the features for trainin and test datasets that correspond to both vehciles and non-vehicles. Features such as spatial bins, color histogram features and HOG features were extracted. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines ### to ### of `trackvehicles.py`. This function calls:  
-    - `color_hist()` (defined in lines ### to ### of `helperfunctions.py`) to extract color histogram features;  
-    - `bin_spatial()` (defined in lines ### to ### of `helperfunctions.py`) to extract spatial features; and  
-    - `get_hog_features()` (defined in lines ### to ### of `helperfunctions.py`) to extract the hog features.    
+- `extract_features_from_datasets()` is then called (defined in lines 83 to 161 in `trackvehicles.py`), which in turn calls:
+  - `extract_features()` (defined in lines 183 to 247 in `helperfunctions.py`). This function was used to extract all the features for training and test datasets that correspond to both vehciles and non-vehicles. Features such as spatial bins, color histogram features and HOG features were extracted. The parameters controlling the feature extraction characteristics (e.g. orient, pix_per_cell, cell_per_block, hog_channel, spatial_size, hist_bins, etc.) are defined as global variables and are initialized in lines 41 to 51 of `trackvehicles.py`. This function calls:  
+    - `color_hist()` (defined in lines 165 to 179 of `helperfunctions.py`) to extract color histogram features;  
+    - `bin_spatial()` (defined in lines 153 to 161 of `helperfunctions.py`) to extract spatial features; and  
+    - `get_hog_features()` (defined in lines 123 to 149 of `helperfunctions.py`) to extract the hog features.    
  
 I randomly plotted the resulting HOG features images using various color spaces and found out that the vehicles are reasonably better visible/identifiable in YCrCb color space. The first 2 channels provide the most informatin that is required for classifying the vehicles/non-vehicles.
 
@@ -92,17 +92,17 @@ The accuracy on the test dataset was approximately 86% using the above parameter
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-Function `train_classifier()` (defined in lines ### to ### of `trackvehicles.py`) was used to train a classifier:    
-- Initially, the features were extracted from train and test dataset images  using `extract_features()` method (lines ### to ### of `trackvehicles.py`). The best combination of hyper parameters (as discussed in the answer to the previous question) were passed on to the `extract_features()` function.
-- Then X_scaler object was defined to normalize all the features (lines ### to ### of `trackvehicles.py`).
-- I tried two different classifier types during the course of this project: Linear SVM Classifier, and Random Forest Classifier. For each of these classifier types, a manual grid search was performed to identify the optimum hyper parameters (i.e. the parameters that resulted in the highest accuracy of classification on the test dataset). It was decided that the Linear SVC Classifier was performing better with respect to both speed and accuracy of the test dataset. The classifier is defined and trained in lines ### and ### of `trackvehicles.py`. 
+Function `train_classifier()` (defined in lines 166 to 223 of `trackvehicles.py`) was used to train a classifier:    
+- Initially, the features were extracted from train and test dataset images using `extract_features()` method (lines 183 to 247 of `trackvehicles.py`). The best combination of hyper parameters (as discussed in the answer to the previous question) were passed on to the `extract_features()` function.
+- Then X_scaler object was defined to normalize all the features (lines 193 to 196 of `trackvehicles.py`).
+- I tried two different classifier types during the course of this project: Linear SVM Classifier, and Random Forest Classifier. For each of these classifier types, a manual grid search was performed to identify the optimum hyper parameters (i.e. the parameters that resulted in the highest accuracy of classification on the test dataset). It was decided that the Linear SVC Classifier was performing better with respect to both speed and accuracy of the test dataset. The classifier is defined and trained in lines 214 and 215 of `trackvehicles.py`. 
 
 
 ###Sliding Window Search
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I defined 4 different search areas (lines 50 to 58 of `trackvehicles.py`):
+I defined 4 different search areas (lines 55 to 64 of `trackvehicles.py`):
 ```
 # search widnows below indicates the areas of interest that should be searched plus the search window size.  
 # The first element is the ((x_min, x_max), (y_min, y_max)) where the coordiantes are relative to the image
@@ -126,14 +126,14 @@ Examples of search windows drawn on example test images with 50% overlap are sho
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
 
-Function `mark_vehicles_on_frame()` (defined in lines ### to ### or `trackvehicles.py`) implements the pipeline that draws bounding boxes on the images. The following steps are performed in this function:  
-1- The function iterates through all_search_windows containing tuple elements, with the first element of the tuple identifying the area of interest, and the second item identifying the size of the search window (lines ### to ### of `trackvehicles.py`). For each search_window:  
-  - function `slide_window()` is called to to obtain the list of search windows with 50% overlap. `slide_window()` is defined in lines ### to ### of `helperfunctions.py`.  
-  - function `search_windows()` (lines ### to ### of `helperfunctions.py`) is then called to assess the classifier on each search window identified in the previous step and determine if the subject search_window is a vehicle or not. This function internally calls `extract_hog_features_once()` (lines ### to ## of `helperfunctions.py`) if hog_batch is True in order to extract HOG features only once for the region of interest in order to speed up the process (i.e. instead of extracting HOG features for each search window). if hog_batch is not True, then HOG features are extracted for each search_window image, which takes longer.    
-2- The list of hot windows (i.e. windows that contained car segments) is then appended to a list that stores the hot windows for the past few frames. Information pertaining to the 10 most recent frames are stored in `recent_hot_windows` (i.e. `num_frames_to_keep = 10`). (lines ### to ### of `trackvehicles.py`)  
-3- A heatmap object is created, which has the same dimensions as the image that is being processed by adding 1 inside the hot windows for all recent frames that are stored in `recent_hot_windows` (lines ### to ### of `trackvehicles.py`).  
-4- Two threshold values are used to screen the false positives and only return non-zero values where the value is above the thresholds (lines ### to ### of `trackvehicles.py`). The thresholded heatmaps (i.e. `heatmap_high`, and `heatmap_low`) along with the original image are then passed to function `draw_bboxes_using_watershed()`, which estimate the location of the cars.   
-5- `draw_bboxes_using_watershed()` (defined in lines ### to ### of `trackvehicles.py`) uses the `watershed()` method function from `skimage.morphology` library as well as `label()` from `scipy.ndimage.measurements` and `distance()` function from `scipy.ndimage` library to identify the zones that are connected together in the heatmap.  I also implemented another implementation of this function called `draw_bboxes_using_label()` which only uses one threshold, and is simpler - defined in lines ### to ### of `trackvehicles.py`.   
+Function `mark_vehicles_on_frame()` (defined in lines 332 to 452 or `trackvehicles.py`) implements the pipeline that draws bounding boxes on the images. The following steps are performed in this function:  
+1- The function iterates through all_search_windows containing tuple elements, with the first element of the tuple identifying the area of interest, and the second item identifying the size of the search window (lines 354 to 371 of `trackvehicles.py`). For each search_window:  
+  - function `slide_window()` is called to obtain the list of search windows with 50% overlap. `slide_window()` is defined in lines ### to ### of `helperfunctions.py`.  
+  - function `search_windows()` (lines 251 to 293 of `helperfunctions.py`) is then called to assess the classifier on each search window identified in the previous step and determine if the subject search_window is a vehicle or not. This function internally calls `extract_hog_features_once()` (lines 297 to 355 of `helperfunctions.py`) if hog_batch is True in order to extract HOG features only once for the region of interest and to speed up the process (i.e. instead of extracting HOG features for each search window). if hog_batch is not True, then HOG features are extracted for each search_window image, which takes longer.    
+2- The list of hot windows (i.e. windows that contained car segments) is then appended to a list that stores the hot windows for the past few frames. Information pertaining to the 10 most recent frames are stored in `recent_hot_windows` (i.e. `num_frames_to_keep = 10`). (lines 362 to 371 of `trackvehicles.py`)  
+3- A heatmap object is created, which has the same dimensions as the image that is being processed by adding 1 inside the hot windows for all recent frames that are stored in `recent_hot_windows` (lines 384 to 387 of `trackvehicles.py`).  
+4- Two threshold values are used to screen the false positives and only return non-zero values where the value is above the thresholds (lines 399 to 402 of `trackvehicles.py`). The high threshold is later on used identify peaks (i.e. cars), and then the low threshold is used to identify the extent of each object. The thresholded heatmaps (i.e. `heatmap_high`, and `heatmap_low`) along with the original image are then passed to function `draw_bboxes_using_watershed()`, which estimate the location of the cars.   
+5- `draw_bboxes_using_watershed()` (defined in lines 228 to 282 of `trackvehicles.py`) uses the `watershed()` method function from `skimage.morphology` library as well as `label()` from `scipy.ndimage.measurements` and `distance()` function from `scipy.ndimage` library to identify the zones that are connected together in the heatmap.  I also implemented another implementation of this function called `draw_bboxes_using_label()` which only uses one threshold value and the `label()` functin, and is simpler - defined in lines 286 to 316 of `trackvehicles.py`.   
 
 
 The above pipeline is shown consecutively in the example images below:
@@ -162,11 +162,11 @@ Here's a [link to my video result](./Processed_project_video.mp4)
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
 The following pipeline is used:  
-- I recorded the positions of positive detections in each frame of the video and stored them in `recent_hot_windows` (defined globally in line # of `trackvehicles.py`).  
-- From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions (using 2 thresholds as explained above).  
-- I then used  `draw_bboxes_using_watershed()` (defined in lines ### to ### of `trackvehicles.py`), which uses the `watershed()` method function from `skimage.morphology` library as well as `label()` from `scipy.ndimage.measurements` and `distance()` function from `scipy.ndimage` library to identify the zones that are connected together in the heatmap.  
-- Using the `watershed()` function allows for overlapping bounding boxes. However, I used a rather large window size of 144 by 144 for searching local maxima on the result of the `distance` function (line # of `trackvechicles.py`). This resulted in smoother bounding boxes in the video stream but came at the expense of putting one bounding box over two vehicles if they are too close or overlapping.  
-- After each car area is detected, then the maximum and minimum x and y of each labeled area (which was determined by using `label()` function - line ### of `trackvehicles.py`) is used to determine the bounding box (line ### of `trackvehicles.py`)
+- I recorded the positions of positive detections in each frame of the video and stored them in `recent_hot_windows` (defined globally in line 36 of `trackvehicles.py`).  
+- From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions (using 2 thresholds as explained above: the high threshold for identifying the vehicle positions and low threshold to identify the extent of each vehicle).  
+- I then used  `draw_bboxes_using_watershed()` (defined in lines 228 to 282 of `trackvehicles.py`), which uses the `watershed()` method function from `skimage.morphology` library as well as `label()` from `scipy.ndimage.measurements` and `distance()` function from `scipy.ndimage` library to identify the zones that are connected together in the heatmap.  
+- Using the `watershed()` function allows for overlapping bounding boxes. However, I used a rather large window size of 144 by 144 for searching local maxima on the result of the `distance` function (line 250 of `trackvechicles.py`). This resulted in smoother bounding boxes in the video stream but came at the expense of putting one bounding box over two vehicles if they are too close or overlapping.  
+- After each car area is detected, then the maximum and minimum x and y of each labeled area (which was determined by using `label()` function - line 276 of `trackvehicles.py`) is used to determine the bounding box and to draw it on the image (line 279 of `trackvehicles.py`)
 
 The pipeline images presented above shows the operation inside the `draw_bboxes_using_watershed()` function in a graphical way.
 
@@ -179,6 +179,7 @@ The pipeline images presented above shows the operation inside the `draw_bboxes_
 The following challenges were faced during this problem:  
 1- The dark car color in the video stream initially posed a challenge because the dark colors associated with shadows, etc. were initially associated with non-vehicles class. However, after switching the color space to YCrCb color space and adding additional training images, this obstacle was overcome.  
 2- Initially the white car could not be identified when slightly far away from the source camers (also see below). However, with changing the window search sizes, and thresholding/averaging over 10 frames it finally worked.
+3- The thresholding and averaging of hot_windows over multiple frames can be further optimized by using better algorithms.
 
 The following situations may result in the failure of the pipeline:  
 1- When lighting conditions change (i.e. shaddows on the road, and or change in the color of the asphalt), the classifier may identify many false positives, which is not good. The threshold values can be adjusted to resolve this, but this results in dynamically changing the threshold values to account for the lighting conditions.
