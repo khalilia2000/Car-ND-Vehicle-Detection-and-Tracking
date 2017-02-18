@@ -27,7 +27,6 @@ from scipy import ndimage as ndi
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from matplotlib import gridspec
-from sklearn import tree
 
 
 # Define global variables
