@@ -126,16 +126,15 @@ Examples of search windows drawn on example test images with 50% overlap are sho
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
 
-Function `mark_vehicles_on_frame()` (lines 228 to 291 or `trackvehicles.py`) implements the pipeline that draw bounding boxes on the images. The following steps are performed in this function:  
-1- The function iterates through all_search_windows containing tuple elements, with the first element of the tuple identifying the area of interest, and the second item identifying the size of the search window (lines 240 to 255 of `trackvehicles.py`). For each search_window:  
-  - function `slide_window()` is called to to obtain the list of search windows with 50% overlap. `slide_window()` is defined in lines 244 to 286 of `helperfunctions.py`.  
-  - function `search_windows()` (lines 372 to 424 of `helperfunctions.py`) is then called to assess the classifier on each search window identified in the previous step and determine if the subject search_window is a vehicle or not. This function internally calls `extract_hog_features_once()` (lines 290 to 367 of `helperfunctions.py`) to extract HOG features only once for the region of interest in order to speed up the process (i.e. instead of extracting HOG features for each search window).   
-  
-2- The list of hot windows (i.e. windows that contained car segments) is then appended to a list that stores the hot windows for the past few frames. Information pertaining to the 5 most recent frames are stored in `recent_hot_windows` (i.e. `num_frames_to_keep = 5`). (lines 256 to 259 of `trackvehicles.py`)  
-3- A heatmap object is created, which has the same dimensions as the image that is being processed by adding 1 inside the hot windows for all recent frames that are stored in `recent_hot_windows` (lines 261 to 264 of `trackvehicles.py`).  
-4- A Threshold value is used to screen the false positives and only return non-zero values where the value is above the threshold (line 270 of `trackvehicles.py`.  
-5- function `label()` from `scipy.ndimage.measurements` is then used to label the zones that are connected together in the heatmap (line 273 of `trackvehicles.py`).  
-6- function `draw_labeled_bboxes()` is then called to draw bounding boxes around the zones that are connected together in the heatmap (line 284 of `trackvehicles.py`). Similarly, if requierd, the heatmap in plotted in the bounding boxes (lines 286 to 289 of `trackvehicles.py`).  
+Function `mark_vehicles_on_frame()` (defined in lines ### to ### or `trackvehicles.py`) implements the pipeline that draws bounding boxes on the images. The following steps are performed in this function:  
+1- The function iterates through all_search_windows containing tuple elements, with the first element of the tuple identifying the area of interest, and the second item identifying the size of the search window (lines ### to ### of `trackvehicles.py`). For each search_window:  
+  - function `slide_window()` is called to to obtain the list of search windows with 50% overlap. `slide_window()` is defined in lines ### to ### of `helperfunctions.py`.  
+  - function `search_windows()` (lines ### to ### of `helperfunctions.py`) is then called to assess the classifier on each search window identified in the previous step and determine if the subject search_window is a vehicle or not. This function internally calls `extract_hog_features_once()` (lines ### to ## of `helperfunctions.py`) if hog_batch is True in order to extract HOG features only once for the region of interest in order to speed up the process (i.e. instead of extracting HOG features for each search window). if hog_batch is not True, then HOG features are extracted for each search_window image, which takes longer.    
+2- The list of hot windows (i.e. windows that contained car segments) is then appended to a list that stores the hot windows for the past few frames. Information pertaining to the 10 most recent frames are stored in `recent_hot_windows` (i.e. `num_frames_to_keep = 10`). (lines ### to ### of `trackvehicles.py`)  
+3- A heatmap object is created, which has the same dimensions as the image that is being processed by adding 1 inside the hot windows for all recent frames that are stored in `recent_hot_windows` (lines ### to ### of `trackvehicles.py`).  
+4- Two threshold values are used to screen the false positives and only return non-zero values where the value is above the thresholds (lines ### to ### of `trackvehicles.py`). The thresholded heatmaps (i.e. `heatmap_high`, and `heatmap_low`) along with the original image are then passed to function `draw_bboxes_using_watershed()`, which estimate the location of the cars.   
+5- `draw_bboxes_using_watershed()` (defined in lines ### to ### of `trackvehicles.py`) uses the `watershed()` method function from `skimage.morphology` library as well as `label()` from `scipy.ndimage.measurements` and `distance()` function from `scipy.ndimage` library to identify the zones that are connected together in the heatmap.  I also implemented another implementation of this function called `draw_bboxes_using_label()` which only uses one threshold, and is simpler - defined in lines ### to ### of `trackvehicles.py`.   
+
 
 The above pipeline is shown consecutively in the example images below:
 
@@ -144,9 +143,12 @@ The above pipeline is shown consecutively in the example images below:
 | Original Image | <img src="./output_images/pipeline_0.jpg" height =288 width=512> |
 | Image with hot windows drawn (Step 1 above) | <img src="./output_images/pipeline_1.jpg" height =288 width=512> |
 | Image with heatmap drawn (Step 3 above) | <img src="./output_images/pipeline_2.jpg" height =288 width=512> |
-| Using thresholding to eliminate false positives (Step 4 above) | <img src="./output_images/pipeline_3.jpg" height =288 width=512> |
-| Identify car blobs using label function (Step 5) | <img src="./output_images/pipeline_4.jpg" height =288 width=512> |
-| Processed image with bounding boxes drawn on it (Step 6) | <img src="./output_images/pipeline_5.jpg" height =288 width=512> |
+| Image with high thresholded heatmap drawn (Step 4 above) | <img src="./output_images/pipeline_3.jpg" height =288 width=512> |
+| Image with low thresholded heatmap drawn (Step 4 above) | <img src="./output_images/pipeline_4.jpg" height =288 width=512> |
+| Applying the distance function to the high thresholded heatmap (Step 5 above) | <img src="./output_images/pipeline_5.jpg" height =288 width=512> |
+| Applying the distance function to the low thresholded heatmap (Step 5 above) | <img src="./output_images/pipeline_6.jpg" height =288 width=512> |
+| Identify car blobs using label function (Step 5 above) | <img src="./output_images/pipeline_7.jpg" height =288 width=512> |
+| Processed image with bounding boxes drawn on it (Step 5 above) | <img src="./output_images/pipeline_8.jpg" height =288 width=512> |
 
 ---
 
