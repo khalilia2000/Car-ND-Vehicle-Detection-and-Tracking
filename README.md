@@ -140,7 +140,7 @@ The above pipeline is shown consecutively in the example images below:
 
 | Description    | Image      |
 |:--------------:|:----------:|
-| Original Image | <img src="./output_images/pipeline_0.jpg" height =288 width=512> |
+| Original Image | <img src="./output_images/pipeline_0.png" height =288 width=512> |
 | Image with hot windows drawn (Step 1 above) | <img src="./output_images/pipeline_1.jpg" height =288 width=512> |
 | Image with heatmap drawn (Step 3 above) | <img src="./output_images/pipeline_2.jpg" height =288 width=512> |
 | Image with high thresholded heatmap drawn (Step 4 above) | <img src="./output_images/pipeline_3.jpg" height =288 width=512> |
@@ -148,7 +148,7 @@ The above pipeline is shown consecutively in the example images below:
 | Applying the distance function to the high thresholded heatmap (Step 5 above) | <img src="./output_images/pipeline_5.jpg" height =288 width=512> |
 | Applying the distance function to the low thresholded heatmap (Step 5 above) | <img src="./output_images/pipeline_6.jpg" height =288 width=512> |
 | Identify car blobs using label function (Step 5 above) | <img src="./output_images/pipeline_7.jpg" height =288 width=512> |
-| Processed image with bounding boxes drawn on it (Step 5 above) | <img src="./output_images/pipeline_8.jpg" height =288 width=512> |
+| Processed image with bounding boxes drawn on it (Step 5 above) | <img src="./output_images/pipeline_8.png" height =288 width=512> |
 
 ---
 
