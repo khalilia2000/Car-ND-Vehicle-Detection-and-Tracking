@@ -187,8 +187,8 @@ The following situations may result in the failure of the pipeline:
 
 
 The following can be done to make the program mor robust:
-1- Come up with better classifiers. Use deep learning techniques.
-2- Use better and more training exmaples (i.e. in different light conditions, etc.).
-3- Use images that only show parts of a car in the training dataset (note that is what I did with the AUTTI dataset inclusion).
-4- Use a better algorithm to detect overlapping cars.
-5- Track the position and size of each car through the recent frames. That way one can smooth out the trackign windows and avoid flickering changes in the bounding boxes. Also False negatives can be avoided to some extnet using thsi technique.
+1- Come up with better classifiers. Use deep learning techniques.  
+2- Use better and more training exmaples (i.e. in different light conditions, etc.).  
+3- Use images that only show parts of a car in the training dataset (note that is what I did with the AUTTI dataset inclusion).  
+4- Use a better algorithm to detect overlapping cars.  
+5- Track the position and size of each car through the recent frames. That way one can smooth out the trackign windows and avoid flickering changes in the bounding boxes. Also False negatives can be avoided to some extnet using thsi technique.  
