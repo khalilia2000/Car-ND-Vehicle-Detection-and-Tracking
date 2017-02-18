@@ -56,7 +56,9 @@ hog_feat = True             # HOG features on or off
 # Thresholds for procesing heatmaps
 thresh_high=10
 thresh_low=5
-# Search area coordinates and window sizes for far, mid-range and near cars
+# Search widnows below indicates the areas of interest that should be searched plus the search window size.  
+# The first element is the ((x_min, x_max), (y_min, y_max)) where the coordiantes are relative to the image
+# size, (i.e. between 0 and 1) and the second element is the size of the search widnow:
 search_window_0 = (np.array([[0.0,1.0], [0.5, 1.0]]), 32)
 search_window_1 = (np.array([[0.0,1.0], [0.5, 1.0]]), 64)
 search_window_2 = (np.array([[0.0,1.0], [0.5, 1.0]]), 96)
