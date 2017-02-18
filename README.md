@@ -182,11 +182,11 @@ The following challenges were faced during this problem:
 3- The thresholding and averaging of hot_windows over multiple frames can be further optimized by using better algorithms.
 
 The following situations may result in the failure of the pipeline:  
-1- When lighting conditions change (i.e. shadows on the road, and or change in the color of the asphalt), the classifier may identify many false positives, which is not good. The threshold values can be adjusted to resolve this, but this results in dynamically changing the threshold values to account for the lighting conditions.
+1- When lighting conditions change (i.e. shadows on the road, and or change in the color of the asphalt), the classifier may identify many false positives, which is not good. The threshold values can be adjusted to resolve this, but this results in dynamically changing the threshold values to account for the lighting conditions.  
 2- Given the search window sizes that I used and the thresholding operation, the smaller cars (i.e. the cars on the other side of the road, or he cars that are very far) cannot be detected. Perhaps a separate search can be done and dedicated in identifying the smaller cars, but this will result in a time-consuming operation which may not be warranted for a live feed video.
 
 
-The following can be done to make the program mor robust:
+The following can be done to make the program mor robust:  
 1- Come up with better classifiers. Use deep learning techniques.  
 2- Use better and more training exmaples (i.e. in different light conditions, etc.).  
 3- Use images that only show parts of a car in the training dataset (note that is what I did with the AUTTI dataset inclusion).  
