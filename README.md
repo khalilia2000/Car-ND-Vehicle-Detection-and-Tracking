@@ -1,4 +1,4 @@
-##Car-ND-Vehicle-Detection-and-Tracking
+## Car-ND-Vehicle-Detection-and-Tracking
 
 ---
 
@@ -19,15 +19,15 @@ The goals / steps of this project are the following:
 ###Here I will consider the [rubric](https://review.udacity.com/#!/rubrics/513/view) points individually and describe how I addressed each point in my implementation.  
 
 ---
-###Writeup / README
+### Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.    
+#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.    
 
 I did use the template provided in the course notes and modified it. You're reading the README.md!
 
-###Histogram of Oriented Gradients (HOG)
+### Histogram of Oriented Gradients (HOG)
 
-####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
+#### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
 `read_data_and_train_classifier()` (defined in lines 519 to 548 in `trackvehicles.py`) reads the training images and trains a classifier. The following pipeline is used:  
 - I started by reading in all the vehicle and non-vehicle images using `read_datasets()` function (defined in lines 41 to 118 of `helperfunctions.py`). The datasets are split into training and test datasets such that all images in test datasets form a consecutive block to avoid cross-contamination between training and test datasets (note this may occur due to the close/consecutive images in the datasets that are extracted from a video stream.). In forming the datasets, additional images were extracted from the AUTTI dataset and were added to both vehicle and non-vehicle datasets.  I also added the horizontally flipped images to complement the datasets. The total number of vehicle and non-vehicle images included in the datasets were 60,000, and 60,000 respectively. About 20% of the images were set aside for testing the classifier and the rest were used for training the classifier (line 71 of `helperfunctions.py`). Below are a few examples of the `vehicle` and `non-vehicle` dataset classes:  
@@ -72,7 +72,7 @@ Although 16x16 pixels per cell appear to be coarse, in practice it results in go
 
 
 
-####2. Explain how you settled on your final choice of HOG parameters.
+#### 2. Explain how you settled on your final choice of HOG parameters.
 
 I plotted the resulting images on random images of vehicle and non-vehicle datasets to see visually if there is a best combination. However, after many trials, I almost did a manual grid search for identifying the optimum HOG parameters that resulted in the best accuracy of the trained classifier on the test dataset (i.e. changing one parameter at a time and comparing the results). The best combination consisted of using Linear SVC Classifier with the following parameters:  
 ```
@@ -90,7 +90,7 @@ hog_feat = True              # HOG features on or off
 ```
 The accuracy on the test dataset was approximately 86% using the above parameters. I also used a Random Forest Classifier, but the training time and running time was too much and it did not result in significant improvement in learning/training.
 
-####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+#### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
 Function `train_classifier()` (defined in lines 166 to 223 of `trackvehicles.py`) was used to train a classifier:    
 - Initially, the features were extracted from train and test dataset images using `extract_features()` method (lines 183 to 247 of `trackvehicles.py`). The best combination of hyper parameters (as discussed in the answer to the previous question) were passed on to the `extract_features()` function.
@@ -98,9 +98,9 @@ Function `train_classifier()` (defined in lines 166 to 223 of `trackvehicles.py`
 - I tried two different classifier types during the course of this project: Linear SVM Classifier, and Random Forest Classifier. For each of these classifier types, a manual grid search was performed to identify the optimum hyper parameters (i.e. the parameters that resulted in the highest accuracy of classification on the test dataset). It was decided that the Linear SVC Classifier was performing better with respect to both speed and accuracy of the test dataset. The classifier is defined and trained in lines 214 and 215 of `trackvehicles.py`. 
 
 
-###Sliding Window Search
+### Sliding Window Search
 
-####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+#### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
 I defined 4 different search areas (lines 55 to 64 of `trackvehicles.py`):
 ```
@@ -124,7 +124,7 @@ Examples of search windows drawn on example test images with 50% overlap are sho
 
 
 
-####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
+#### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to try to minimize false positives and reliably detect cars?
 
 Function `mark_vehicles_on_frame()` (defined in lines 332 to 452 or `trackvehicles.py`) implements the pipeline that draws bounding boxes on the images. The following steps are performed in this function:  
 1- The function iterates through all_search_windows containing tuple elements, with the first element of the tuple identifying the area of interest, and the second item identifying the size of the search window (lines 354 to 371 of `trackvehicles.py`). For each search_window:  
@@ -154,12 +154,12 @@ The above pipeline is shown consecutively in the example images below:
 
 ### Video Implementation
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)  
+#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)  
 
 Here's a [link to my video result](./Processed_project_video.mp4)
 
 
-####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+#### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
 The following pipeline is used:  
 - I recorded the positions of positive detections in each frame of the video and stored them in `recent_hot_windows` (defined globally in line 36 of `trackvehicles.py`).  
@@ -172,9 +172,9 @@ The pipeline images presented above shows the operation inside the `draw_bboxes_
 
 ---
 
-###Discussion
+### Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 The following challenges were faced during this problem:  
 1- The dark car color in the video stream initially posed a challenge because the dark colors associated with shadows, etc. were initially associated with non-vehicles class. However, after switching the color space to YCrCb color space and adding additional training images, this obstacle was overcome.  
